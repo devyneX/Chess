@@ -1,9 +1,4 @@
-from pawn import Pawn
-from rook import Rook
-from knight import Knight
-from bishop import Bishop
-from queen import Queen
-from king import King
+from pieces import Pawn, Rook, Knight, Bishop, Queen, King
 import pygame
 
 pygame.init()
@@ -15,7 +10,15 @@ class Board:
         self.height = 480
         self.x = 10
         self.y = 0
-        self.pieces = [[]]
+        self.position = [['rb', 'knb', 'bb', 'qb', 'kb', 'bb', 'knb', 'rb']]
+
+    @staticmethod
+    def make_pieces(Piece, color, square):
+        """
+        :type Piece: class
+        """
+        piece = Piece(color, square, None, None)
+        return piece
 
     def draw_pieces(self, win, color, x, y, w_inc):
         if x == self.x or x == self.width - w_inc + self.x:

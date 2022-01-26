@@ -4,8 +4,8 @@ import pygame
 pygame.init()
 
 bg_color = (0, 0, 0)
-screen_width = 500
-screen_height = 480
+screen_width = 500  # 660
+screen_height = 480  # 640
 size = (screen_width, screen_height)
 
 screen = pygame.display.set_mode(size)
