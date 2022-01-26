@@ -4,64 +4,71 @@ import pygame
 pygame.init()
 
 
-class Board:
-    def __init__(self):
-        self.width = 480
-        self.height = 480
-        self.x = 10
-        self.y = 0
-        self.showing_moves = (False, None)
+class Square:
+    white = (250, 215, 180)
+    black = (105, 58, 12)
+    home_piece = [Rook, Knight, Bishop, Queen, King, Bishop, Knight, Rook]
 
-    def draw_pieces(self, win, color, x, y, w_inc):
-        if x == self.x or x == self.width - w_inc + self.x:
-            # rooks
-            rook = Rook(self, color, None, x, y)
-            win.blit(rook.img, (rook.x, rook.y))
-        elif x == self.x + w_inc or x == self.width - 2 * w_inc + self.x:
-            # knights
-            knight = Knight(self, color, None, x, y)
-            win.blit(knight.img, (knight.x, knight.y))
-        elif x == self.x + 2 * w_inc or x == self.width - 3 * w_inc + self.x:
-            # bishops
-            bishop = Bishop(self, color, None, x, y)
-            win.blit(bishop.img, (bishop.x, bishop.y))
-        elif x == self.x + 3 * w_inc:
-            # queen
-            queen = Queen(self, color, None, x, y)
-            win.blit(queen.img, (queen.x, queen.y))
-        elif x == self.width - 4 * w_inc + self.x:
-            # king
-            king = King(self, color, None, x, y)
-            win.blit(king.img, (king.x, king.y))
+    def __init__(self, board, name, color, x, y, length):
+        self.board = board
+        self.name = name
+        self.color = color
+        self.piece = None
+        self.x = x
+        self.y = y
+        self.length = length
+        self.piece = self.set_home_piece()
+        self.highlighted = False
+
+    def set_home_piece(self):
+        if self.name[1] == '1':
+            return Square.home_piece[ord(self.name[0]) - ord('a')](self.board, 'White', self)
+        elif self.name[1] == '8':
+            return Square.home_piece[ord(self.name[0]) - ord('a')](self.board, 'Black', self)
+        elif self.name[1] == '2':
+            return Pawn(self.board, 'White', self)
+        elif self.name[1] == '7':
+            return Pawn(self.board, 'Black', self)
 
     def draw(self, win):
-        # white = (255, 255, 255)
-        # size_pos = (self.x, self.y, self.width, self.height)
-        # pygame.draw.rect(win, white, size_pos)
-        w_inc = self.width // 8
-        h_inc = self.height // 8
-        white_square = (250, 215, 180)
-        black_square = (105, 58, 12)
-        i = 1
-        for x in range(self.x, self.x + self.width, w_inc):
-            i -= 1
-            for y in range(self.y, self.y + self.height, h_inc):
-                if i % 2 == 0:
-                    color = black_square
-                else:
-                    color = white_square
-                pygame.draw.rect(win, color, (x, y, w_inc, h_inc))
-                i += 1
-                if y == 0:
-                    # black
-                    self.draw_pieces(win, 'Black', x, y, w_inc)
+        pygame.draw.rect(win, self.color, (self.x, self.y, self.length, self.length))
+        self.draw_piece(win)
 
-                elif y == h_inc:
-                    pawn = Pawn(self, 'Black', None, x, y)
-                    win.blit(pawn.img, (pawn.x, pawn.y))
-                elif y == self.height - 2 * h_inc:
-                    pawn = Pawn(self, 'White', None, x, y)
-                    win.blit(pawn.img, (pawn.x, pawn.y))
-                elif y == self.height - h_inc:
-                    # white
-                    self.draw_pieces(win, 'White', x, y, w_inc)
+    def draw_piece(self, win):
+        if self.piece is None:
+            return
+        win.blit(self.piece.img, (self.x, self.y))
+
+
+class Board:
+    def __init__(self):
+        self.length = 480
+        self.x = 10
+        self.y = 0
+        self.squares = self.make_squares()
+
+    def make_squares(self):
+        squares = []
+        length = self.length // 8
+        x, y = self.x, self.y
+
+        for i in range(8):
+            color = Square.white if i % 2 == 0 else Square.black
+            column = []
+            for j in range(8, 0, -1):
+                if j != 8:
+                    color = Square.white if color == Square.black else Square.black
+                name = f"{chr(ord('a') + i)}{j}"
+                square = Square(self, name, color, x, y, length)
+                column.append(square)
+                y += length
+            squares.append(column)
+            y = self.y
+            x += length
+
+        return squares
+
+    def draw(self, win):
+        for row in self.squares:
+            for square in row:
+                square.draw(win)
