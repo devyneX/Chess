@@ -10,15 +10,7 @@ class Board:
         self.height = 480
         self.x = 10
         self.y = 0
-        self.position = [['rb', 'knb', 'bb', 'qb', 'kb', 'bb', 'knb', 'rb']]
-
-    @staticmethod
-    def make_pieces(Piece, color, square):
-        """
-        :type Piece: class
-        """
-        piece = Piece(color, square, None, None)
-        return piece
+        self.showing_moves = (False, None)
 
     def draw_pieces(self, win, color, x, y, w_inc):
         if x == self.x or x == self.width - w_inc + self.x:
