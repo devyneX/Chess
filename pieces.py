@@ -20,17 +20,25 @@ class Piece:
         self.square = square
         self.img = None
 
+    def __repr__(self):
+        return f'{self.__class__} {self.color}'
+
+    def move(self, square):
+        self.square.piece = None
+        self.square = square
+        square.piece = self
+
 
 class Pawn(Piece):
     def __init__(self, board, color, square):
         super().__init__(board, color, square)
         self.img = Piece.images['Pawn'][Piece.colors[color]]
 
-    def move(self):
-        pass
-
-    def possible_moves(self):
-        pass
+    # def move(self):
+    #     pass
+    #
+    # def possible_moves(self):
+    #     pass
 
 
 class Knight(Piece):
@@ -38,11 +46,11 @@ class Knight(Piece):
         super().__init__(board, color, square)
         self.img = Piece.images['Knight'][Piece.colors[color]]
 
-        def move(self):
-            pass
-
-        def possible_moves(self):
-            pass
+        # def move(self):
+        #     pass
+        #
+        # def possible_moves(self):
+        #     pass
 
 
 class Bishop(Piece):
@@ -50,11 +58,11 @@ class Bishop(Piece):
         super().__init__(board, color, square)
         self.img = Piece.images['Bishop'][Piece.colors[color]]
 
-        def move(self):
-            pass
-
-        def possible_moves(self):
-            pass
+        # def move(self):
+        #     pass
+        #
+        # def possible_moves(self):
+        #     pass
 
 
 class Rook(Piece):
@@ -62,11 +70,11 @@ class Rook(Piece):
         super().__init__(board, color, square)
         self.img = Piece.images['Rook'][Piece.colors[color]]
 
-        def move(self):
-            pass
-
-        def possible_moves(self):
-            pass
+        # def move(self):
+        #     pass
+        #
+        # def possible_moves(self):
+        #     pass
 
 
 class Queen(Piece):
@@ -74,11 +82,11 @@ class Queen(Piece):
         super().__init__(board, color, square)
         self.img = Piece.images['Queen'][Piece.colors[color]]
 
-        def move(self):
-            pass
-
-        def possible_moves(self):
-            pass
+        # def move(self):
+        #     pass
+        #
+        # def possible_moves(self):
+        #     pass
 
 
 class King(Piece):
@@ -86,9 +94,9 @@ class King(Piece):
         super().__init__(board, color, square)
         self.img = Piece.images['King'][Piece.colors[color]]
 
-        def move(self):
-            pass
-
-        def possible_moves(self):
-            pass
+        # def move(self):
+        #     pass
+        #
+        # def possible_moves(self):
+        #     pass
 

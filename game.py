@@ -15,16 +15,28 @@ game_board = Board()
 
 
 def redraw():
-    pass
+    game_board.draw(screen)
+    pygame.display.update()
 
 
 run = True
+selected = None
 while run:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             run = False
             break
 
-    game_board.draw(screen)
-    pygame.display.update()
+        if event.type == pygame.MOUSEBUTTONDOWN:
+            x, y = event.pos
+            sq = game_board.get_square(x, y)
+            print(sq)
+            if selected is not None:
+                selected.move(sq)
+                selected = None
+            else:
+                selected = sq.piece
+
+    redraw()
+
 pygame.quit()
