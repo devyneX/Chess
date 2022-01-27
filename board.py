@@ -7,13 +7,14 @@ pygame.init()
 class Square:
     white = (250, 215, 180)
     black = (105, 58, 12)
+    highlight = (120, 223, 245)
     home_piece = [Rook, Knight, Bishop, Queen, King, Bishop, Knight, Rook]
 
-    def __init__(self, board, name, color, x, y, length):
+    def __init__(self, board, row, column, color, x, y, length):
         self.board = board
-        self.name = name
+        self.column = column
+        self.row = row
         self.color = color
-        self.piece = None
         self.x = x
         self.y = y
         self.length = length
@@ -21,20 +22,27 @@ class Square:
         self.highlighted = False
 
     def __repr__(self):
-        return f'{self.name} -> {self.piece}'
+        return f'{self.get_name()} -> {self.piece}'
+
+    def get_name(self):
+        return f"{chr(ord('a') + self.column - 1)}{self.row}"
 
     def set_home_piece(self):
-        if self.name[1] == '1':
-            return Square.home_piece[ord(self.name[0]) - ord('a')](self.board, 'White', self)
-        elif self.name[1] == '8':
-            return Square.home_piece[ord(self.name[0]) - ord('a')](self.board, 'Black', self)
-        elif self.name[1] == '2':
+        if self.row == 1:
+            return self.home_piece[self.column - 1](self.board, 'White', self)
+        elif self.row == 8:
+            return self.home_piece[self.column - 1](self.board, 'Black', self)
+        elif self.row == 2:
             return Pawn(self.board, 'White', self)
-        elif self.name[1] == '7':
+        elif self.row == 7:
             return Pawn(self.board, 'Black', self)
 
+    # TODO: change highlighting
     def draw(self, win):
-        pygame.draw.rect(win, self.color, (self.x, self.y, self.length, self.length))
+        if self.highlighted:
+            pygame.draw.rect(win, self.highlight, (self.x, self.y, self.length, self.length))
+        else:
+            pygame.draw.rect(win, self.color, (self.x, self.y, self.length, self.length))
         self.draw_piece(win)
 
     def draw_piece(self, win):
@@ -52,6 +60,11 @@ class Board:
         self.squares = self.make_squares()
         print(self.squares)
 
+    def get_index(self, row, column):
+        if row <= 0 or column <= 0 or row > 8 or column > 8:
+            return None
+        return self.squares[8 - row][column - 1]
+
     def make_squares(self):
         """
         This method creates the board representation matrix
@@ -66,8 +79,7 @@ class Board:
             for i in range(8):
                 if i != 0:
                     color = Square.white if color == Square.black else Square.black
-                name = f"{chr(ord('a') + i)}{j}"
-                square = Square(self, name, color, x, y, self.square_length)
+                square = Square(self, j, i + 1, color, x, y, self.square_length)
                 row.append(square)
                 x += self.square_length
             squares.append(row)
@@ -93,5 +105,5 @@ class Board:
         :return: "Square" object
         """
         i = (x - self.x) // self.square_length
-        j = ((y - self.y) // self.square_length)
+        j = (y - self.y) // self.square_length
         return self.squares[j][i]

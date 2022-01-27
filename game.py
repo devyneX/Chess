@@ -1,4 +1,5 @@
 from board import Board
+from player import Player
 import pygame
 
 pygame.init()
@@ -8,10 +9,13 @@ screen_width = 500  # 660
 screen_height = 480  # 640
 size = (screen_width, screen_height)
 
+# TODO: add clocks and background (improvement)
 screen = pygame.display.set_mode(size)
 pygame.display.set_caption('Chess')
 # pygame.display.set_icon('icon.png')
 game_board = Board()
+player1 = Player(game_board, None)
+# TODO: implement turns
 
 
 def redraw():
@@ -29,13 +33,7 @@ while run:
 
         if event.type == pygame.MOUSEBUTTONDOWN:
             x, y = event.pos
-            sq = game_board.get_square(x, y)
-            print(sq)
-            if selected is not None:
-                selected.move(sq)
-                selected = None
-            else:
-                selected = sq.piece
+            player1.play(x, y)
 
     redraw()
 
