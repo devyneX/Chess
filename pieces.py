@@ -41,10 +41,8 @@ class Piece:
             return False
         if move.piece is None:
             moves.append(move)
-            move.highlighted = True
         elif move.piece.color != self.color:
             moves.append(move)
-            move.highlighted = True
             flag = False
         else:
             flag = False
@@ -82,18 +80,14 @@ class Pawn(Piece):
                 extra_square = self.board.get_square(i - 2, j)
 
         if front_square is not None and front_square.piece is None:
-            front_square.highlighted = True
             moves.append(front_square)
         if left_diagonal is not None and left_diagonal.piece is not None:
             if left_diagonal.piece.color != self.color:
-                left_diagonal.highlighted = True
                 moves.append(left_diagonal)
         if right_diagonal is not None and right_diagonal.piece is not None:
             if right_diagonal.piece.color != self.color:
-                right_diagonal.highlighted = True
                 moves.append(right_diagonal)
         if extra_square is not None and extra_square.piece is None:
-            extra_square.highlighted = True
             moves.append(extra_square)
 
         return moves
@@ -107,13 +101,14 @@ class Knight(Piece):
         # def move(self):
         #     pass
         #
-    def possible_moves(self):
 
+    def possible_moves(self):
         moves = []
 
         i, j = self.square.row, self.square.column
 
-        squares = [(i - 2, j - 1), (i - 2, j + 1), (i + 2, j + 1), (i + 2, j - 1), (i + 1, j + 2), (i - 1, j + 2), (i + 1, j - 2), (i - 1, j - 2)]
+        squares = [(i - 2, j - 1), (i - 2, j + 1), (i + 2, j + 1), (i + 2, j - 1), (i + 1, j + 2), (i - 1, j + 2),
+                   (i + 1, j - 2), (i - 1, j - 2)]
 
         for r, c in squares:
             move = self.board.get_square(r, c)
@@ -252,7 +247,7 @@ class Queen(Piece):
         return dummy_bishop.possible_moves() + dummy_rook.possible_moves()
 
 
-# TODO: add check and pin restrictions
+# TODO: add pin restrictions
 class King(Piece):
     def __init__(self, board, color, square):
         super().__init__(board, color, square)
@@ -261,15 +256,81 @@ class King(Piece):
         # def move(self):
         #     pass
         #
+
+    def checked_by(self, square, piece):
+        dummy = piece(self.board, self.color, square)
+        moves = dummy.possible_moves()
+        for move in moves:
+            if isinstance(move.piece, piece) and move.piece.color != self.color:
+                return True
+
+        return False
+
+    def opposition(self, square):
+        i, j = square.row, square.column
+        squares = [(i - 1, j - 1), (i - 1, j), (i - 1, j + 1), (i, j + 1), (i + 1, j + 1), (i + 1, j), (i + 1, j - 1),
+                   (i, j - 1)]
+
+        for r, c in squares:
+            move = self.board.get_square(r, c)
+            if move is None:
+                continue
+            if isinstance(move.piece, King) and move.piece.color != self.color:
+                return True
+
+        return False
+
+    def in_check(self, square):
+        flag = False
+        if self.checked_by(square, Knight):
+            return True
+
+        if self.checked_by(square, Bishop):
+            return True
+
+        if self.checked_by(square, Rook):
+            return True
+
+        if self.checked_by(square, Queen):
+            return True
+
+        right = left = None
+
+        if self.color == 'White':
+            right = self.board.get_square(square.row + 1, square.column + 1)
+            left = self.board.get_square(square.row + 1, square.column - 1)
+        elif self.color == 'Black':
+            right = self.board.get_square(square.row - 1, square.column + 1)
+            left = self.board.get_square(square.row - 1, square.column - 1)
+
+        if right is not None and isinstance(right.piece, Pawn):
+            print(right.piece)
+            if right.piece.color != self.color:
+                flag = True
+        if left is not None and isinstance(left.piece, Pawn):
+            if left.piece.color != self.color:
+                flag = True
+
+        return flag
+
+    def is_legal_move(self, moves, move):
+        if move is None:
+            return
+        if move.piece is None or move.piece.color != self.color:
+            if not self.in_check(move) and not self.opposition(move):
+                moves.append(move)
+
     def possible_moves(self):
         moves = []
 
         i, j = self.square.row, self.square.column
 
-        squares = [(i - 1, j - 1), (i - 1, j), (i - 1, j + 1), (i, j + 1), (i + 1, j + 1), (i + 1, j), (i + 1, j - 1), (i, j - 1)]
+        squares = [(i - 1, j - 1), (i - 1, j), (i - 1, j + 1), (i, j + 1), (i + 1, j + 1), (i + 1, j), (i + 1, j - 1),
+                   (i, j - 1)]
 
         for r, c in squares:
             move = self.board.get_square(r, c)
             self.is_legal_move(moves, move)
 
+        # print(moves)
         return moves

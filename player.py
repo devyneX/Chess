@@ -14,6 +14,10 @@ class Player:
         self.selected = None
         self.legal_moves = []
 
+    def highlight_legal_moves(self):
+        for move in self.legal_moves:
+            move.highlighted = not move.highlighted
+
     def play(self, x, y):
         sq = self.board.get_clicked_square(x, y)
         # print(sq)
@@ -24,12 +28,13 @@ class Player:
                 Player.turn ^= 1
 
             self.selected = None
-            for square in self.legal_moves:
-                square.highlighted = False
+            self.highlight_legal_moves()
             self.legal_moves = []
         else:
             self.selected = sq.piece
+            # print(sq)
             if self.selected is not None and self.selected.color != self.color:
                 self.selected = None
             if self.selected is not None:
                 self.legal_moves = self.selected.possible_moves()
+                self.highlight_legal_moves()
