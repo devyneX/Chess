@@ -9,13 +9,13 @@ screen_width = 500  # 660
 screen_height = 480  # 640
 size = (screen_width, screen_height)
 
-# TODO: add clocks and background (improvement)
+# TODO: add clocks and background and probably sound effects (improvement)
 screen = pygame.display.set_mode(size)
 pygame.display.set_caption('Chess')
 # pygame.display.set_icon('icon.png')
 game_board = Board()
-player1 = Player(game_board, None)
-# TODO: implement turns
+white_player = Player(game_board, 'White')
+black_player = Player(game_board, 'Black')
 
 
 def redraw():
@@ -33,7 +33,11 @@ while run:
 
         if event.type == pygame.MOUSEBUTTONDOWN:
             x, y = event.pos
-            player1.play(x, y)
+            # print(Player.turn)
+            if Player.turn == 0:
+                white_player.play(x, y)
+            else:
+                black_player.play(x, y)
 
     redraw()
 

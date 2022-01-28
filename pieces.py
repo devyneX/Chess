@@ -52,7 +52,7 @@ class Piece:
         return flag
 
 
-# TODO: implement en passant
+# TODO: implement en passant and promotion
 class Pawn(Piece):
     # home_row = {'White': 2, 'Black': 7}
 
@@ -69,17 +69,17 @@ class Pawn(Piece):
         front_square = left_diagonal = right_diagonal = extra_square = None
 
         if self.color == 'White':
-            front_square = self.board.get_index(i + 1, j)
-            left_diagonal = self.board.get_index(i + 1, j - 1)
-            right_diagonal = self.board.get_index(i + 1, j + 1)
+            front_square = self.board.get_square(i + 1, j)
+            left_diagonal = self.board.get_square(i + 1, j - 1)
+            right_diagonal = self.board.get_square(i + 1, j + 1)
             if i == 2:
-                extra_square = self.board.get_index(i + 2, j)
+                extra_square = self.board.get_square(i + 2, j)
         elif self.color == 'Black':
-            front_square = self.board.get_index(i - 1, j)
-            left_diagonal = self.board.get_index(i - 1, j + 1)
-            right_diagonal = self.board.get_index(i - 1, j - 1)
+            front_square = self.board.get_square(i - 1, j)
+            left_diagonal = self.board.get_square(i - 1, j + 1)
+            right_diagonal = self.board.get_square(i - 1, j - 1)
             if i == 7:
-                extra_square = self.board.get_index(i - 2, j)
+                extra_square = self.board.get_square(i - 2, j)
 
         if front_square is not None and front_square.piece is None:
             front_square.highlighted = True
@@ -99,7 +99,6 @@ class Pawn(Piece):
         return moves
 
 
-# TODO: implement knight moves
 class Knight(Piece):
     def __init__(self, board, color, square):
         super().__init__(board, color, square)
@@ -109,7 +108,18 @@ class Knight(Piece):
         #     pass
         #
     def possible_moves(self):
-        return []
+
+        moves = []
+
+        i, j = self.square.row, self.square.column
+
+        squares = [(i - 2, j - 1), (i - 2, j + 1), (i + 2, j + 1), (i + 2, j - 1), (i + 1, j + 2), (i - 1, j + 2), (i + 1, j - 2), (i - 1, j - 2)]
+
+        for r, c in squares:
+            move = self.board.get_square(r, c)
+            self.is_legal_move(moves, move)
+
+        return moves
 
 
 class Bishop(Piece):
@@ -127,7 +137,7 @@ class Bishop(Piece):
         # right-up diagonal
         i, j = self.square.row + 1, self.square.column + 1
         while i <= 8 and j <= 8:
-            move = self.board.get_index(i, j)
+            move = self.board.get_square(i, j)
 
             if not self.is_legal_move(moves, move):
                 break
@@ -138,7 +148,7 @@ class Bishop(Piece):
         # left-down diagonal
         i, j = self.square.row - 1, self.square.column - 1
         while i >= 1 and j >= 1:
-            move = self.board.get_index(i, j)
+            move = self.board.get_square(i, j)
 
             if not self.is_legal_move(moves, move):
                 break
@@ -149,7 +159,7 @@ class Bishop(Piece):
         # left-up diagonal
         i, j = self.square.row + 1, self.square.column - 1
         while i <= 8 and j >= 1:
-            move = self.board.get_index(i, j)
+            move = self.board.get_square(i, j)
 
             if not self.is_legal_move(moves, move):
                 break
@@ -160,7 +170,7 @@ class Bishop(Piece):
         # right-down diagonal
         i, j = self.square.row - 1, self.square.column + 1
         while i >= 1 and j <= 8:
-            move = self.board.get_index(i, j)
+            move = self.board.get_square(i, j)
 
             if not self.is_legal_move(moves, move):
                 break
@@ -186,7 +196,7 @@ class Rook(Piece):
         # up
         i, j = self.square.row + 1, self.square.column
         while i <= 8:
-            move = self.board.get_index(i, j)
+            move = self.board.get_square(i, j)
 
             if not self.is_legal_move(moves, move):
                 break
@@ -196,7 +206,7 @@ class Rook(Piece):
         # down
         i, j = self.square.row - 1, self.square.column
         while i >= 0:
-            move = self.board.get_index(i, j)
+            move = self.board.get_square(i, j)
 
             if not self.is_legal_move(moves, move):
                 break
@@ -206,7 +216,7 @@ class Rook(Piece):
         # left
         i, j = self.square.row, self.square.column - 1
         while i >= 1:
-            move = self.board.get_index(i, j)
+            move = self.board.get_square(i, j)
 
             if not self.is_legal_move(moves, move):
                 break
@@ -216,7 +226,7 @@ class Rook(Piece):
         # right
         i, j = self.square.row, self.square.column + 1
         while i <= 8:
-            move = self.board.get_index(i, j)
+            move = self.board.get_square(i, j)
 
             if not self.is_legal_move(moves, move):
                 break
@@ -242,7 +252,7 @@ class Queen(Piece):
         return dummy_bishop.possible_moves() + dummy_rook.possible_moves()
 
 
-# TODO: implement king moves, add pin restrictions
+# TODO: add check and pin restrictions
 class King(Piece):
     def __init__(self, board, color, square):
         super().__init__(board, color, square)
@@ -252,4 +262,14 @@ class King(Piece):
         #     pass
         #
     def possible_moves(self):
-        return []
+        moves = []
+
+        i, j = self.square.row, self.square.column
+
+        squares = [(i - 1, j - 1), (i - 1, j), (i - 1, j + 1), (i, j + 1), (i + 1, j + 1), (i + 1, j), (i + 1, j - 1), (i, j - 1)]
+
+        for r, c in squares:
+            move = self.board.get_square(r, c)
+            self.is_legal_move(moves, move)
+
+        return moves

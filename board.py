@@ -18,7 +18,7 @@ class Square:
         self.x = x
         self.y = y
         self.length = length
-        self.piece = self.set_home_piece()
+        self.piece = self.get_home_piece()
         self.highlighted = False
 
     def __repr__(self):
@@ -27,7 +27,7 @@ class Square:
     def get_name(self):
         return f"{chr(ord('a') + self.column - 1)}{self.row}"
 
-    def set_home_piece(self):
+    def get_home_piece(self):
         if self.row == 1:
             return self.home_piece[self.column - 1](self.board, 'White', self)
         elif self.row == 8:
@@ -58,9 +58,9 @@ class Board:
         self.y = 0
         self.square_length = self.length // 8
         self.squares = self.make_squares()
-        print(self.squares)
+        # print(self.squares)
 
-    def get_index(self, row, column):
+    def get_square(self, row, column):
         if row <= 0 or column <= 0 or row > 8 or column > 8:
             return None
         return self.squares[8 - row][column - 1]
@@ -97,7 +97,7 @@ class Board:
             for square in row:
                 square.draw(win)
 
-    def get_square(self, x, y):
+    def get_clicked_square(self, x, y):
         """
         This method will take the coordinates and return what square the coordinate is on
         :param x: x-coordinate
