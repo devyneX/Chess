@@ -22,7 +22,7 @@ class Square:
         self.highlighted = False
 
     def __repr__(self):
-        return f'{self.get_name()} -> {self.piece}'
+        return f'{self.get_name()}' # -> {self.piece}'
 
     def get_name(self):
         return f"{chr(ord('a') + self.column - 1)}{self.row}"

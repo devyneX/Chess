@@ -21,7 +21,7 @@ class Piece:
         self.img = None
 
     def __repr__(self):
-        return f'{self.__class__} {self.color}'
+        return f'{self.color} {self.__class__} {self.square}'
 
     def move(self, square):
         self.square.piece = None
@@ -248,6 +248,7 @@ class Queen(Piece):
 
 
 # TODO: add pin restrictions
+# TODO: add castling
 class King(Piece):
     def __init__(self, board, color, square):
         super().__init__(board, color, square)
@@ -304,7 +305,7 @@ class King(Piece):
             left = self.board.get_square(square.row - 1, square.column - 1)
 
         if right is not None and isinstance(right.piece, Pawn):
-            print(right.piece)
+            # print(right.piece)
             if right.piece.color != self.color:
                 flag = True
         if left is not None and isinstance(left.piece, Pawn):
