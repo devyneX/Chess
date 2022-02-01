@@ -22,7 +22,7 @@ class Square:
         self.highlighted = False
 
     def __repr__(self):
-        return f'{self.get_name()}' # -> {self.piece}'
+        return f'{self.get_name()}'  # -> {self.piece}'
 
     def get_name(self):
         return f"{chr(ord('a') + self.column - 1)}{self.row}"
@@ -58,6 +58,8 @@ class Board:
         self.y = 0
         self.square_length = self.length // 8
         self.squares = self.make_squares()
+        self.kings = {'White': self.get_square(1, 5).piece,
+                      'Black': self.get_square(8, 5).piece}
         # print(self.squares)
 
     def get_square(self, row, column):

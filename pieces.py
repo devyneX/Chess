@@ -1,3 +1,4 @@
+from restrictions import Check
 import pygame
 
 pygame.init()
@@ -23,22 +24,33 @@ class Piece:
     def __repr__(self):
         return f'{self.color} {self.__class__} {self.square}'
 
+    def pinned(self):
+        """
+        This function will determine whether a piece is pinned and find the path of the pin
+        Path {}
+        :return: The path on which the piece is restricted
+        """
+        pass
+
     def move(self, square):
         self.square.piece = None
         self.square = square
         square.piece = self
 
-    def possible_moves(self):
+    def possible_moves(self, check):
         """
         This methods finds the legal moves for a piece
         :return:
         """
         pass
 
-    def is_legal_move(self, moves, move):
-        flag = True
+    def add_if_legal(self, moves, move, check):
         if move is None:
             return False
+        if check is not None and check.is_restricted(move):
+            return True
+
+        flag = True
         if move.piece is None:
             moves.append(move)
         elif move.piece.color != self.color:
@@ -61,7 +73,7 @@ class Pawn(Piece):
     # def move(self):
     #     pass
     #
-    def possible_moves(self):
+    def possible_moves(self, check):
         moves = []
         i, j = self.square.row, self.square.column
         front_square = left_diagonal = right_diagonal = extra_square = None
@@ -102,7 +114,7 @@ class Knight(Piece):
         #     pass
         #
 
-    def possible_moves(self):
+    def possible_moves(self, check):
         moves = []
 
         i, j = self.square.row, self.square.column
@@ -112,7 +124,7 @@ class Knight(Piece):
 
         for r, c in squares:
             move = self.board.get_square(r, c)
-            self.is_legal_move(moves, move)
+            self.add_if_legal(moves, move, check)
 
         return moves
 
@@ -126,7 +138,7 @@ class Bishop(Piece):
         #     pass
         #
 
-    def possible_moves(self):
+    def possible_moves(self, check):
         moves = []
 
         # right-up diagonal
@@ -134,7 +146,7 @@ class Bishop(Piece):
         while i <= 8 and j <= 8:
             move = self.board.get_square(i, j)
 
-            if not self.is_legal_move(moves, move):
+            if not self.add_if_legal(moves, move, check):
                 break
 
             i += 1
@@ -145,7 +157,7 @@ class Bishop(Piece):
         while i >= 1 and j >= 1:
             move = self.board.get_square(i, j)
 
-            if not self.is_legal_move(moves, move):
+            if not self.add_if_legal(moves, move, check):
                 break
 
             i -= 1
@@ -156,7 +168,7 @@ class Bishop(Piece):
         while i <= 8 and j >= 1:
             move = self.board.get_square(i, j)
 
-            if not self.is_legal_move(moves, move):
+            if not self.add_if_legal(moves, move, check):
                 break
 
             i += 1
@@ -167,7 +179,7 @@ class Bishop(Piece):
         while i >= 1 and j <= 8:
             move = self.board.get_square(i, j)
 
-            if not self.is_legal_move(moves, move):
+            if not self.add_if_legal(moves, move, check):
                 break
 
             i -= 1
@@ -185,7 +197,7 @@ class Rook(Piece):
         #     pass
         #
 
-    def possible_moves(self):
+    def possible_moves(self, check):
         moves = []
 
         # up
@@ -193,7 +205,7 @@ class Rook(Piece):
         while i <= 8:
             move = self.board.get_square(i, j)
 
-            if not self.is_legal_move(moves, move):
+            if not self.add_if_legal(moves, move, check):
                 break
 
             i += 1
@@ -203,7 +215,7 @@ class Rook(Piece):
         while i >= 0:
             move = self.board.get_square(i, j)
 
-            if not self.is_legal_move(moves, move):
+            if not self.add_if_legal(moves, move, check):
                 break
 
             i -= 1
@@ -213,7 +225,7 @@ class Rook(Piece):
         while i >= 1:
             move = self.board.get_square(i, j)
 
-            if not self.is_legal_move(moves, move):
+            if not self.add_if_legal(moves, move, check):
                 break
 
             j -= 1
@@ -223,7 +235,7 @@ class Rook(Piece):
         while i <= 8:
             move = self.board.get_square(i, j)
 
-            if not self.is_legal_move(moves, move):
+            if not self.add_if_legal(moves, move, check):
                 break
 
             j += 1
@@ -240,11 +252,11 @@ class Queen(Piece):
         #     pass
         #
 
-    def possible_moves(self):
+    def possible_moves(self, check):
         dummy_bishop = Bishop(self.board, self.color, self.square)
         dummy_rook = Rook(self.board, self.color, self.square)
 
-        return dummy_bishop.possible_moves() + dummy_rook.possible_moves()
+        return dummy_bishop.possible_moves(check) + dummy_rook.possible_moves(check)
 
 
 # TODO: add pin restrictions
@@ -260,12 +272,12 @@ class King(Piece):
 
     def checked_by(self, square, piece):
         dummy = piece(self.board, self.color, square)
-        moves = dummy.possible_moves()
+        moves = dummy.possible_moves(None)
         for move in moves:
             if isinstance(move.piece, piece) and move.piece.color != self.color:
-                return True
+                return move.piece
 
-        return False
+        return None
 
     def opposition(self, square):
         i, j = square.row, square.column
@@ -281,19 +293,25 @@ class King(Piece):
 
         return False
 
+    # FIXME: if the move is somewhere blocked by the king from the check, the dummy pieces do not work
     def in_check(self, square):
-        flag = False
-        if self.checked_by(square, Knight):
-            return True
+        checking_pieces = []
+        for piece in [Knight, Bishop, Rook, Queen]:
+            checking_piece = self.checked_by(square, piece)
+            if checking_piece is not None:
+                checking_pieces.append(checking_piece)
 
-        if self.checked_by(square, Bishop):
-            return True
-
-        if self.checked_by(square, Rook):
-            return True
-
-        if self.checked_by(square, Queen):
-            return True
+        # if self.checked_by(square, Knight):
+        #     return True
+        #
+        # if self.checked_by(square, Bishop):
+        #     return True
+        #
+        # if self.checked_by(square, Rook):
+        #     return True
+        #
+        # if self.checked_by(square, Queen):
+        #     return True
 
         right = left = None
 
@@ -305,23 +323,22 @@ class King(Piece):
             left = self.board.get_square(square.row - 1, square.column - 1)
 
         if right is not None and isinstance(right.piece, Pawn):
-            # print(right.piece)
             if right.piece.color != self.color:
-                flag = True
+                checking_pieces.append(right.piece)
         if left is not None and isinstance(left.piece, Pawn):
             if left.piece.color != self.color:
-                flag = True
+                checking_pieces.append(left.piece)
 
-        return flag
+        return None if len(checking_pieces) == 0 else Check(self, checking_pieces)
 
-    def is_legal_move(self, moves, move):
+    def add_if_legal(self, moves, move, check):
         if move is None:
             return
         if move.piece is None or move.piece.color != self.color:
-            if not self.in_check(move) and not self.opposition(move):
+            if self.in_check(move) is None and not self.opposition(move):
                 moves.append(move)
 
-    def possible_moves(self):
+    def possible_moves(self, check):
         moves = []
 
         i, j = self.square.row, self.square.column
@@ -331,7 +348,6 @@ class King(Piece):
 
         for r, c in squares:
             move = self.board.get_square(r, c)
-            self.is_legal_move(moves, move)
+            self.add_if_legal(moves, move, check)
 
-        # print(moves)
         return moves
