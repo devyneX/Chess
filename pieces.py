@@ -92,15 +92,19 @@ class Pawn(Piece):
                 extra_square = self.board.get_square(i - 2, j)
 
         if front_square is not None and front_square.piece is None:
-            moves.append(front_square)
+            if check is None or not check.is_restricted(front_square):
+                moves.append(front_square)
         if left_diagonal is not None and left_diagonal.piece is not None:
             if left_diagonal.piece.color != self.color:
-                moves.append(left_diagonal)
+                if check is None or not check.is_restricted(left_diagonal):
+                    moves.append(left_diagonal)
         if right_diagonal is not None and right_diagonal.piece is not None:
             if right_diagonal.piece.color != self.color:
-                moves.append(right_diagonal)
+                if check is None or not check.is_restricted(right_diagonal):
+                    moves.append(right_diagonal)
         if extra_square is not None and extra_square.piece is None:
-            moves.append(extra_square)
+            if check is None or not check.is_restricted(extra_square):
+                moves.append(extra_square)
 
         return moves
 
@@ -259,6 +263,36 @@ class Queen(Piece):
         return dummy_bishop.possible_moves(check) + dummy_rook.possible_moves(check)
 
 
+class Dummy(Knight, Bishop, Rook, Queen):
+    def __init__(self, board, color, square, piece, king):
+        super().__init__(board, color, square)
+        self.type = piece
+        self.king = king
+
+    def add_if_legal(self, moves, move, check):
+        # print('called dummy')
+        if move is None:
+            return False
+
+        if move.piece is None:
+            return True
+        elif move.piece.color != self.color:
+            moves.append(move)
+            return False
+        elif move.piece == self.king:
+            # print('here')
+            return True
+        else:
+            return False
+
+    def possible_moves(self, check):
+        if self.type == Queen:
+            dummy_bishop = Dummy(self.board, self.color, self.square, Bishop, self.king)
+            dummy_rook = Dummy(self.board, self.color, self.square, Rook, self.king)
+            return dummy_bishop.possible_moves(check) + dummy_rook.possible_moves(check)
+        return self.type.possible_moves(self, check)
+
+
 # TODO: add pin restrictions
 # TODO: add castling
 class King(Piece):
@@ -270,11 +304,25 @@ class King(Piece):
         #     pass
         #
 
+    # def checked_by_knight(self, square):
+    #     dummy = Knight(self.board, self.color, square)
+    #     moves = dummy.possible_moves(None)
+    #     for move in moves:
+    #         if isinstance(move.piece, Knight) and move.piece.color != self.color:
+    #             return move.piece
+    #
+    #     return None
+    #
+    # def checked_by_bishop(self, square):
+    #     pass
+
     def checked_by(self, square, piece):
-        dummy = piece(self.board, self.color, square)
+        # dummy = piece(self.board, self.color, square)
+        dummy = Dummy(self.board, self.color, square, piece, self)
         moves = dummy.possible_moves(None)
         for move in moves:
             if isinstance(move.piece, piece) and move.piece.color != self.color:
+                # print('found', move.piece)
                 return move.piece
 
         return None
@@ -293,8 +341,8 @@ class King(Piece):
 
         return False
 
-    # FIXME: if the move is somewhere blocked by the king from the check, the dummy pieces do not work
     def in_check(self, square):
+        print(square)
         checking_pieces = []
         for piece in [Knight, Bishop, Rook, Queen]:
             checking_piece = self.checked_by(square, piece)
@@ -328,6 +376,8 @@ class King(Piece):
         if left is not None and isinstance(left.piece, Pawn):
             if left.piece.color != self.color:
                 checking_pieces.append(left.piece)
+
+        print(checking_pieces)
 
         return None if len(checking_pieces) == 0 else Check(self, checking_pieces)
 

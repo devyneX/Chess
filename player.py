@@ -3,7 +3,6 @@ import pygame
 pygame.init()
 
 
-# TODO: implement checks
 class Player:
 
     turn = 0

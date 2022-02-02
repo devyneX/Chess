@@ -24,6 +24,9 @@ class Square:
     def __repr__(self):
         return f'{self.get_name()}'  # -> {self.piece}'
 
+    def __eq__(self, other):
+        return self.row == other.row and self.column == other.column
+
     def get_name(self):
         return f"{chr(ord('a') + self.column - 1)}{self.row}"
 
@@ -38,6 +41,7 @@ class Square:
             return Pawn(self.board, 'Black', self)
 
     # TODO: change highlighting
+    # TODO: add highlighting for checks
     def draw(self, win):
         if self.highlighted:
             pygame.draw.rect(win, self.highlight, (self.x, self.y, self.length, self.length))
@@ -99,6 +103,7 @@ class Board:
             for square in row:
                 square.draw(win)
 
+    # FIXME: clicks outside board errors out
     def get_clicked_square(self, x, y):
         """
         This method will take the coordinates and return what square the coordinate is on
