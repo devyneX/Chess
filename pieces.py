@@ -95,6 +95,11 @@ class Piece:
     def __repr__(self):
         return f'{self.color} {self.__class__} {self.square}'
 
+    def move(self, square):
+        self.square.piece = None
+        self.square = square
+        square.piece = self
+
     def pinned(self):
         """
         This method will determine whether a piece is pinned and find the path of the pin
@@ -112,11 +117,6 @@ class Piece:
                 continue
             if Pin.in_path(self.square, piece.square, king.square):
                 return Pin(king, self, piece)
-
-    def move(self, square):
-        self.square.piece = None
-        self.square = square
-        square.piece = self
 
     def possible_moves(self, check, check_pin=True):
         """
@@ -278,6 +278,12 @@ class Rook(Piece):
     def __init__(self, board, color, square):
         super().__init__(board, color, square)
         self.img = self.images['Rook'][Piece.colors[color]]
+        self.moved = False
+
+    def move(self, square):
+        super().move(square)
+        if not self.moved:
+            self.moved = True
 
     def possible_moves(self, check, check_pin=True):
         pin = self.pinned() if check_pin else None
@@ -367,11 +373,35 @@ class Dummy(Knight, Bishop, Rook, Queen):
         return self.type.possible_moves(self, check, check_pin)
 
 
-# TODO: add castling
 class King(Piece):
     def __init__(self, board, color, square):
         super().__init__(board, color, square)
         self.img = self.images['King'][Piece.colors[color]]
+        self.moved = False
+
+    def move(self, square):
+        if self.color == 'White':
+            if self.square.row == 1 and self.square.column == 5:
+                if square.row == 1:
+                    if square.column == 7:
+                        rook = self.board.get_square(1, 8).piece
+                        rook.move(self.board.get_square(1, 6))
+                    elif square.column == 3:
+                        rook = self.board.get_square(1, 1).piece
+                        rook.move(self.board.get_square(1, 4))
+        elif self.color == 'Black':
+            if self.square.row == 8 and self.square.column == 5:
+                if square.row == 8:
+                    if square.column == 7:
+                        rook = self.board.get_square(8, 8).piece
+                        rook.move(self.board.get_square(8, 6))
+                    elif square.column == 3:
+                        rook = self.board.get_square(8, 1).piece
+                        rook.move(self.board.get_square(8, 4))
+
+        super().move(square)
+        if not self.moved:
+            self.moved = True
 
     def checked_by(self, square, piece):
         dummy = Dummy(self.board, self.color, square, piece, self)
@@ -382,10 +412,13 @@ class King(Piece):
 
         return None
 
+    @staticmethod
+    def adjacent_squares(i, j):
+        return [(i - 1, j - 1), (i - 1, j), (i - 1, j + 1), (i, j + 1), (i + 1, j + 1), (i + 1, j), (i + 1, j - 1),
+                (i, j - 1)]
+
     def opposition(self, square):
-        i, j = square.row, square.column
-        squares = [(i - 1, j - 1), (i - 1, j), (i - 1, j + 1), (i, j + 1), (i + 1, j + 1), (i + 1, j), (i + 1, j - 1),
-                   (i, j - 1)]
+        squares = self.adjacent_squares(square.row, square.column)
 
         for r, c in squares:
             move = self.board.get_square(r, c)
@@ -428,17 +461,58 @@ class King(Piece):
             if self.in_check(move) is None and not self.opposition(move):
                 moves.append(move)
 
+    def castle_available(self, moves):
+        if self.moved:
+            return
+
+        if self.color == 'White':
+            short_rook = self.board.get_square(1, 8).piece
+            middle_square1 = self.board.get_square(1, 6)
+            middle_square2 = self.board.get_square(1, 7)
+            if isinstance(short_rook, Rook) and not short_rook.moved:
+                if middle_square1.piece is None and middle_square2.piece is None:
+                    if self.in_check(middle_square1) is None and self.in_check(middle_square2) is None:
+                        moves.append(self.board.get_square(1, 7))
+
+            long_rook = self.board.get_square(1, 1).piece
+            middle_square1 = self.board.get_square(1, 2)
+            middle_square2 = self.board.get_square(1, 3)
+            middle_square3 = self.board.get_square(1, 4)
+            if isinstance(long_rook, Rook) and not long_rook.moved:
+                if middle_square1.piece is None and middle_square2.piece is None:
+                    if middle_square3.piece is None:
+                        if self.in_check(middle_square2) is None and self.in_check(middle_square3) is None:
+                            moves.append(self.board.get_square(1, 3))
+
+        elif self.color == 'Black':
+            short_rook = self.board.get_square(8, 8).piece
+            middle_square1 = self.board.get_square(8, 6)
+            middle_square2 = self.board.get_square(8, 7)
+            if isinstance(short_rook, Rook) and not short_rook.moved:
+                if middle_square1.piece is None and middle_square2.piece is None:
+                    if self.in_check(middle_square1) is None and self.in_check(middle_square2) is None:
+                        moves.append(self.board.get_square(8, 7))
+
+            long_rook = self.board.get_square(8, 1).piece
+            middle_square1 = self.board.get_square(8, 2)
+            middle_square2 = self.board.get_square(8, 3)
+            middle_square3 = self.board.get_square(8, 4)
+            if isinstance(long_rook, Rook) and not long_rook.moved:
+                if middle_square1.piece is None and middle_square2.piece is None:
+                    if middle_square3.piece is None:
+                        if self.in_check(middle_square2) is None and self.in_check(middle_square3) is None:
+                            moves.append(self.board.get_square(8, 3))
+
     def possible_moves(self, check, check_pin=True):
         moves = []
 
-        i, j = self.square.row, self.square.column
-
-        squares = [(i - 1, j - 1), (i - 1, j), (i - 1, j + 1), (i, j + 1), (i + 1, j + 1), (i + 1, j), (i + 1, j - 1),
-                   (i, j - 1)]
+        squares = self.adjacent_squares(self.square.row, self.square.column)
 
         for r, c in squares:
             move = self.board.get_square(r, c)
             self.add_if_legal(moves, move, check, None)
+
+        self.castle_available(moves)
 
         return moves
 

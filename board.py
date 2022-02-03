@@ -43,8 +43,6 @@ class Square:
         elif self.row == 7:
             return Pawn(self.board, 'Black', self)
 
-    # TODO: change highlighting
-    # TODO: add highlighting for checks
     def draw(self, win):
         if self.highlighted:
             if self.piece is not None:

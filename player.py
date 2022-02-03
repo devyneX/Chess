@@ -21,6 +21,8 @@ class Player:
     def set_opponent(self, other):
         self.opponent = other
 
+    # TODO: implement stalemate
+    # TODO: implement draw by insufficient material
     def checkmate(self, check):
         self.get_legal_moves(check)
         # print(self.legal_moves)
