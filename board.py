@@ -56,10 +56,7 @@ class Square:
             pygame.draw.rect(win, self.highlight, (self.x, self.y, self.length, self.length))
         else:
             pygame.draw.rect(win, self.color, (self.x, self.y, self.length, self.length))
-        # if self.highlighted:
-        #     pygame.draw.rect(win, self.highlight, (self.x, self.y, self.length, self.length))
-        # else:
-        #     pygame.draw.rect(win, self.color, (self.x, self.y, self.length, self.length))
+
         self.draw_piece(win)
 
     def draw_piece(self, win):
@@ -115,7 +112,6 @@ class Board:
             for square in row:
                 square.draw(win)
 
-    # FIXME: clicks outside board errors out
     def get_clicked_square(self, x, y):
         """
         This method will take the coordinates and return what square the coordinate is on
@@ -123,6 +119,8 @@ class Board:
         :param y: y-coordinate
         :return: "Square" object
         """
+        if x > self.x + self.length or y > self.y + self.length:
+            return None
         i = (x - self.x) // self.square_length
         j = (y - self.y) // self.square_length
         return self.squares[j][i]

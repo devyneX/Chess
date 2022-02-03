@@ -4,7 +4,6 @@ pygame.init()
 
 
 class Player:
-
     turn = 0
 
     def __init__(self, board, color):
@@ -21,15 +20,23 @@ class Player:
     def set_opponent(self, other):
         self.opponent = other
 
-    # TODO: implement stalemate
     # TODO: implement draw by insufficient material
-    def checkmate(self, check):
+    def get_status(self, check):
+        flag = True
         self.get_legal_moves(check)
-        # print(self.legal_moves)
         for piece in self.legal_moves:
             if len(self.legal_moves[piece]) != 0:
-                return False
-        return True
+                flag = False
+
+        if check is not None:
+            if flag:
+                return 'Checkmate'
+            else:
+                return 'Continue'
+        elif flag:
+            return 'Stalemate'
+        else:
+            return 'Continue'
 
     def set_legal_moves(self):
         limit = (1, 3) if self.color == 'White' else (7, 9)
@@ -68,6 +75,8 @@ class Player:
 
     def play(self, x, y):
         sq = self.board.get_clicked_square(x, y)
+        if sq is None:
+            return
 
         if self.selected is not None:
             if sq in self.legal_moves[self.selected]:
@@ -83,8 +92,9 @@ class Player:
                 check = self.opponent.king.in_check(self.opponent.king.square)
                 if check is not None:
                     self.opponent.king.square.check_highlighted = True
-                if self.opponent.checkmate(check):
-                    print('Game over')
+                status = self.opponent.get_status(check)
+                if status != 'Continue':
+                    print(status)
 
             elif sq.piece is not None:
                 if sq.piece == self.selected:
