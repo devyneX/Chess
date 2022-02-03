@@ -23,6 +23,7 @@ class Player:
 
     def checkmate(self, check):
         self.get_legal_moves(check)
+        # print(self.legal_moves)
         for piece in self.legal_moves:
             if len(self.legal_moves[piece]) != 0:
                 return False
@@ -32,7 +33,6 @@ class Player:
         limit = (1, 3) if self.color == 'White' else (7, 9)
         for i in range(limit[0], limit[1]):
             for j in range(1, 9):
-                print(self.board.get_square(i, j).piece)
                 self.legal_moves[self.board.get_square(i, j).piece] = []
 
     def get_legal_moves(self, check):
@@ -52,11 +52,10 @@ class Player:
 
     def select(self, piece):
         self.selected = piece
-        # print(sq)
         if self.selected is not None and self.selected.color != self.color:
             self.selected = None
         if self.selected is not None:
-            # self.legal_moves = self.selected.possible_moves()
+            # print(self.selected)
             self.highlight_legal_moves(self.selected)
 
     def unselect(self):
@@ -64,26 +63,8 @@ class Player:
         self.selected = None
 
     def play(self, x, y):
-
-        # if self.king.in_check():
-        #     if king in double check
-        #         calculate king moves
-        #         if no king moves
-        #             checkmate
-        #         if king moves
-        #             add king moves
-        #     if not in double check
-        #         find moves for all pieces
-        #         if no moves
-        #             checkmate
-        #         if moves:
-        #             add moves
-        # if not in check
-        #     calculate moves and add
-
         sq = self.board.get_clicked_square(x, y)
-        # print(sq)
-        # print(self.legal_moves)
+
         if self.selected is not None:
             if sq in self.legal_moves[self.selected]:
                 self.selected.move(sq)

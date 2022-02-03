@@ -35,7 +35,6 @@ while run:
 
         if event.type == pygame.MOUSEBUTTONDOWN:
             x, y = event.pos
-            # print(Player.turn)
             if Player.turn == 0:
                 white_player.play(x, y)
             else:

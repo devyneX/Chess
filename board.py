@@ -64,7 +64,6 @@ class Board:
         self.squares = self.make_squares()
         self.kings = {'White': self.get_square(1, 5).piece,
                       'Black': self.get_square(8, 5).piece}
-        # print(self.squares)
 
     def get_square(self, row, column):
         if row <= 0 or column <= 0 or row > 8 or column > 8:

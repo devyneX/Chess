@@ -1,17 +1,88 @@
-from restrictions import Check, Pin
 import pygame
 
 pygame.init()
 
 
+class Check:
+    def __init__(self, king, pieces):
+        self.king = king
+        self.pieces = pieces
+
+    def double_check(self):
+        return len(self.pieces) == 2
+
+    @classmethod
+    def in_path(cls, king_square, piece_square, move):
+        if move == king_square:
+            return False
+        if king_square.row == piece_square.row:
+            # horizontal
+            if move.row == king_square.row:
+                return max(king_square.column, piece_square.column) >= move.column >= min(king_square.column,
+                                                                                          piece_square.column)
+        elif king_square.column == piece_square.column:
+            # vertical
+            if move.column == king_square.column:
+                return max(king_square.row, piece_square.row) >= move.row >= min(king_square.row, piece_square.row)
+        else:
+            # diagonal
+            m = (king_square.row - piece_square.row) // (king_square.column - piece_square.column)
+            c = - m * king_square.column + king_square.row
+            if move.row == m * move.column + c:
+                h_row, l_row = max(king_square.row, piece_square.row), min(king_square.row, piece_square.row)
+                h_col, l_col = max(king_square.column, piece_square.column), min(king_square.column,
+                                                                                 piece_square.column)
+                return h_row >= move.row >= l_row and h_col >= move.column >= l_col
+            else:
+                return False
+
+    def restricted(self, move):
+        if isinstance(self.pieces[0], Knight):
+            if move == self.pieces[0].square:
+                return False
+            else:
+                return True
+        if move == self.pieces[0].square:
+            return False
+        return not self.in_path(self.king.square, self.pieces[0].square, move)
+
+
+class Pin:
+    def __init__(self, king, pinned, pinning):
+        self.king = king
+        self.pinned = pinned
+        self.pinning = pinning
+        self.check = Check(king, [pinning])
+
+    @classmethod
+    def in_path(cls, pin_square, pinning_square, king_square):
+        if pin_square.row == pinning_square.row:
+            # horizontal
+            return king_square.row == pin_square.row
+        elif pin_square.column == pinning_square.column:
+            # vertical
+            return king_square.column == pin_square.column
+        else:
+            # diagonal
+            m = (pin_square.row - pinning_square.row) // (pin_square.column - pinning_square.column)
+            c = - m * pin_square.column + pin_square.row
+            return king_square.row == m * king_square.column + c
+
+    def restricted(self, move):
+        return self.check.restricted(move)
+
+
 class Piece:
     images = {
-        'Pawn': [pygame.image.load(r'chess_pieces/pawnb.png'), pygame.image.load(r'chess_pieces/pawnw.png')],
-        'Knight': [pygame.image.load(r'chess_pieces/knightb.png'), pygame.image.load(r'chess_pieces/knightw.png')],
-        'Bishop': [pygame.image.load(r'chess_pieces/bishopb.png'), pygame.image.load(r'chess_pieces/bishopw.png')],
-        'Rook': [pygame.image.load(r'chess_pieces/rookb.png'), pygame.image.load(r'chess_pieces/rookw.png')],
-        'Queen': [pygame.image.load(r'chess_pieces/queenb.png'), pygame.image.load(r'chess_pieces/queenw.png')],
-        'King': [pygame.image.load(r'chess_pieces/kingb.png'), pygame.image.load(r'chess_pieces/kingw.png')]
+        'Pawn': [pygame.image.load(r'chess_pieces/black_pawn.png'), pygame.image.load(r'chess_pieces/white_pawn.png')],
+        'Knight': [pygame.image.load(r'chess_pieces/black_knight.png'), pygame.image.load(
+            r'chess_pieces/white_knight.png')],
+        'Bishop': [pygame.image.load(r'chess_pieces/black_bishop.png'), pygame.image.load(
+            r'chess_pieces/white_bishop.png')],
+        'Rook': [pygame.image.load(r'chess_pieces/black_rook.png'), pygame.image.load(r'chess_pieces/white_rook.png')],
+        'Queen': [pygame.image.load(r'chess_pieces/black_queen.png'), pygame.image.load(
+            r'chess_pieces/white_queen.png')],
+        'King': [pygame.image.load(r'chess_pieces/black_king.png'), pygame.image.load(r'chess_pieces/white_king.png')]
     }
     colors = {'Black': 0, 'White': 1}
 
@@ -31,9 +102,14 @@ class Piece:
         :return: The path on which the piece is restricted
         """
         king = self.board.kings[self.color]
-        dummy_king = Dummy_King(self.board, self.color, self.square)
+        dummy_king = DummyKing(self.board, self.color, self.square)
         check = dummy_king.in_check(self.square)
+        if check is None:
+            return None
+
         for piece in check.pieces:
+            if isinstance(piece, Knight):
+                continue
             if Pin.in_path(self.square, piece.square, king.square):
                 return Pin(king, self, piece)
 
@@ -42,17 +118,21 @@ class Piece:
         self.square = square
         square.piece = self
 
-    def possible_moves(self, check):
+    def possible_moves(self, check, check_pin=True):
         """
         This methods finds the legal moves for a piece
-        :return:
+        :param check:
+        :param check_pin:
+        :return: a list of legal moves
         """
-        pass
+        return []
 
-    def add_if_legal(self, moves, move, check):
+    def add_if_legal(self, moves, move, check, pin):
         if move is None:
             return False
-        if check is not None and check.is_restricted(move):
+        if check is not None and check.restricted(move):
+            return True
+        if pin is not None and pin.restricted(move):
             return True
 
         flag = True
@@ -69,16 +149,13 @@ class Piece:
 
 # TODO: implement en passant and promotion
 class Pawn(Piece):
-    # home_row = {'White': 2, 'Black': 7}
-
     def __init__(self, board, color, square):
         super().__init__(board, color, square)
         self.img = self.images['Pawn'][Piece.colors[color]]
 
-    # def move(self):
-    #     pass
-    #
-    def possible_moves(self, check):
+    def possible_moves(self, check, check_pin=True):
+        pin = self.pinned() if check_pin else None
+
         moves = []
         i, j = self.square.row, self.square.column
         front_square = left_diagonal = right_diagonal = extra_square = None
@@ -98,18 +175,22 @@ class Pawn(Piece):
 
         if front_square is not None and front_square.piece is None:
             if check is None or not check.restricted(front_square):
-                moves.append(front_square)
+                if pin is None or not pin.restricted(front_square):
+                    moves.append(front_square)
         if left_diagonal is not None and left_diagonal.piece is not None:
             if left_diagonal.piece.color != self.color:
                 if check is None or not check.restricted(left_diagonal):
-                    moves.append(left_diagonal)
+                    if pin is None or not pin.restricted(left_diagonal):
+                        moves.append(left_diagonal)
         if right_diagonal is not None and right_diagonal.piece is not None:
             if right_diagonal.piece.color != self.color:
                 if check is None or not check.restricted(right_diagonal):
-                    moves.append(right_diagonal)
+                    if pin is None or not pin.restricted(right_diagonal):
+                        moves.append(right_diagonal)
         if extra_square is not None and extra_square.piece is None:
             if check is None or not check.restricted(extra_square):
-                moves.append(extra_square)
+                if pin is None or not pin.restricted(extra_square):
+                    moves.append(extra_square)
 
         return moves
 
@@ -119,11 +200,9 @@ class Knight(Piece):
         super().__init__(board, color, square)
         self.img = self.images['Knight'][Piece.colors[color]]
 
-        # def move(self):
-        #     pass
-        #
+    def possible_moves(self, check, check_pin=True):
+        pin = self.pinned() if check_pin else None
 
-    def possible_moves(self, check):
         moves = []
 
         i, j = self.square.row, self.square.column
@@ -133,7 +212,7 @@ class Knight(Piece):
 
         for r, c in squares:
             move = self.board.get_square(r, c)
-            self.add_if_legal(moves, move, check)
+            self.add_if_legal(moves, move, check, pin)
 
         return moves
 
@@ -143,11 +222,9 @@ class Bishop(Piece):
         super().__init__(board, color, square)
         self.img = self.images['Bishop'][Piece.colors[color]]
 
-        # def move(self):
-        #     pass
-        #
+    def possible_moves(self, check, check_pin=True):
+        pin = self.pinned() if check_pin else None
 
-    def possible_moves(self, check):
         moves = []
 
         # right-up diagonal
@@ -155,7 +232,7 @@ class Bishop(Piece):
         while i <= 8 and j <= 8:
             move = self.board.get_square(i, j)
 
-            if not self.add_if_legal(moves, move, check):
+            if not self.add_if_legal(moves, move, check, pin):
                 break
 
             i += 1
@@ -166,7 +243,7 @@ class Bishop(Piece):
         while i >= 1 and j >= 1:
             move = self.board.get_square(i, j)
 
-            if not self.add_if_legal(moves, move, check):
+            if not self.add_if_legal(moves, move, check, pin):
                 break
 
             i -= 1
@@ -177,7 +254,7 @@ class Bishop(Piece):
         while i <= 8 and j >= 1:
             move = self.board.get_square(i, j)
 
-            if not self.add_if_legal(moves, move, check):
+            if not self.add_if_legal(moves, move, check, pin):
                 break
 
             i += 1
@@ -188,7 +265,7 @@ class Bishop(Piece):
         while i >= 1 and j <= 8:
             move = self.board.get_square(i, j)
 
-            if not self.add_if_legal(moves, move, check):
+            if not self.add_if_legal(moves, move, check, pin):
                 break
 
             i -= 1
@@ -202,11 +279,9 @@ class Rook(Piece):
         super().__init__(board, color, square)
         self.img = self.images['Rook'][Piece.colors[color]]
 
-        # def move(self):
-        #     pass
-        #
+    def possible_moves(self, check, check_pin=True):
+        pin = self.pinned() if check_pin else None
 
-    def possible_moves(self, check):
         moves = []
 
         # up
@@ -214,7 +289,7 @@ class Rook(Piece):
         while i <= 8:
             move = self.board.get_square(i, j)
 
-            if not self.add_if_legal(moves, move, check):
+            if not self.add_if_legal(moves, move, check, pin):
                 break
 
             i += 1
@@ -224,7 +299,7 @@ class Rook(Piece):
         while i >= 0:
             move = self.board.get_square(i, j)
 
-            if not self.add_if_legal(moves, move, check):
+            if not self.add_if_legal(moves, move, check, pin):
                 break
 
             i -= 1
@@ -234,7 +309,7 @@ class Rook(Piece):
         while i >= 1:
             move = self.board.get_square(i, j)
 
-            if not self.add_if_legal(moves, move, check):
+            if not self.add_if_legal(moves, move, check, pin):
                 break
 
             j -= 1
@@ -244,7 +319,7 @@ class Rook(Piece):
         while i <= 8:
             move = self.board.get_square(i, j)
 
-            if not self.add_if_legal(moves, move, check):
+            if not self.add_if_legal(moves, move, check, pin):
                 break
 
             j += 1
@@ -257,11 +332,7 @@ class Queen(Piece):
         super().__init__(board, color, square)
         self.img = self.images['Queen'][Piece.colors[color]]
 
-        # def move(self):
-        #     pass
-        #
-
-    def possible_moves(self, check):
+    def possible_moves(self, check, check_pin=True):
         dummy_bishop = Bishop(self.board, self.color, self.square)
         dummy_rook = Rook(self.board, self.color, self.square)
 
@@ -274,8 +345,7 @@ class Dummy(Knight, Bishop, Rook, Queen):
         self.type = piece
         self.king = king
 
-    def add_if_legal(self, moves, move, check):
-        # print('called dummy')
+    def add_if_legal(self, moves, move, check, pin):
         if move is None:
             return False
 
@@ -285,49 +355,29 @@ class Dummy(Knight, Bishop, Rook, Queen):
             moves.append(move)
             return False
         elif move.piece == self.king:
-            # print('here')
             return True
         else:
             return False
 
-    def possible_moves(self, check):
+    def possible_moves(self, check, check_pin=False):
         if self.type == Queen:
             dummy_bishop = Dummy(self.board, self.color, self.square, Bishop, self.king)
             dummy_rook = Dummy(self.board, self.color, self.square, Rook, self.king)
-            return dummy_bishop.possible_moves(check) + dummy_rook.possible_moves(check)
-        return self.type.possible_moves(self, check)
+            return dummy_bishop.possible_moves(check, check_pin) + dummy_rook.possible_moves(check, check_pin)
+        return self.type.possible_moves(self, check, check_pin)
 
 
-# TODO: add pin restrictions
 # TODO: add castling
 class King(Piece):
     def __init__(self, board, color, square):
         super().__init__(board, color, square)
         self.img = self.images['King'][Piece.colors[color]]
 
-        # def move(self):
-        #     pass
-        #
-
-    # def checked_by_knight(self, square):
-    #     dummy = Knight(self.board, self.color, square)
-    #     moves = dummy.possible_moves(None)
-    #     for move in moves:
-    #         if isinstance(move.piece, Knight) and move.piece.color != self.color:
-    #             return move.piece
-    #
-    #     return None
-    #
-    # def checked_by_bishop(self, square):
-    #     pass
-
     def checked_by(self, square, piece):
-        # dummy = piece(self.board, self.color, square)
         dummy = Dummy(self.board, self.color, square, piece, self)
         moves = dummy.possible_moves(None)
         for move in moves:
             if isinstance(move.piece, piece) and move.piece.color != self.color:
-                # print('found', move.piece)
                 return move.piece
 
         return None
@@ -347,24 +397,11 @@ class King(Piece):
         return False
 
     def in_check(self, square):
-        print(square)
         checking_pieces = []
         for piece in [Knight, Bishop, Rook, Queen]:
             checking_piece = self.checked_by(square, piece)
             if checking_piece is not None:
                 checking_pieces.append(checking_piece)
-
-        # if self.checked_by(square, Knight):
-        #     return True
-        #
-        # if self.checked_by(square, Bishop):
-        #     return True
-        #
-        # if self.checked_by(square, Rook):
-        #     return True
-        #
-        # if self.checked_by(square, Queen):
-        #     return True
 
         right = left = None
 
@@ -382,18 +419,16 @@ class King(Piece):
             if left.piece.color != self.color:
                 checking_pieces.append(left.piece)
 
-        print(checking_pieces)
-
         return None if len(checking_pieces) == 0 else Check(self, checking_pieces)
 
-    def add_if_legal(self, moves, move, check):
+    def add_if_legal(self, moves, move, check, pin):
         if move is None:
             return
         if move.piece is None or move.piece.color != self.color:
             if self.in_check(move) is None and not self.opposition(move):
                 moves.append(move)
 
-    def possible_moves(self, check):
+    def possible_moves(self, check, check_pin=True):
         moves = []
 
         i, j = self.square.row, self.square.column
@@ -403,21 +438,26 @@ class King(Piece):
 
         for r, c in squares:
             move = self.board.get_square(r, c)
-            self.add_if_legal(moves, move, check)
+            self.add_if_legal(moves, move, check, None)
 
         return moves
 
 
-class Dummy_King(King):
+class DummyKing(King):
     def checked_by(self, square, piece):
-        def checked_by(self, square, piece):
-            # dummy = piece(self.board, self.color, square)
-            dummy = Dummy(self.board, self.color, square, piece, self)
-            moves = dummy.possible_moves(None)
-            pieces = []
-            for move in moves:
-                if isinstance(move.piece, piece) and move.piece.color != self.color:
-                    # print('found', move.piece)
-                    pieces.append(move.piece)
+        dummy = Dummy(self.board, self.color, square, piece, self)
+        moves = dummy.possible_moves(None)
+        pieces = []
+        for move in moves:
+            if isinstance(move.piece, piece) and move.piece.color != self.color:
+                pieces.append(move.piece)
 
-            return None if len(pieces) == 0 else pieces
+        return pieces
+
+    def in_check(self, square):
+        checking_pieces = []
+        for piece in [Bishop, Rook, Queen]:
+            checking_piece = self.checked_by(square, piece)
+            checking_pieces.extend(checking_piece)
+
+        return None if len(checking_pieces) == 0 else Check(self, checking_pieces)
