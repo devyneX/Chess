@@ -8,6 +8,7 @@ class Square:
     white = (250, 215, 180)
     black = (105, 58, 12)
     highlight = (120, 223, 245)
+    check_highlight = (255, 0, 0)
     home_piece = [Rook, Knight, Bishop, Queen, King, Bishop, Knight, Rook]
 
     def __init__(self, board, row, column, color, x, y, length):
@@ -20,6 +21,8 @@ class Square:
         self.length = length
         self.piece = self.get_home_piece()
         self.highlighted = False
+        self.selected_highlighted = False
+        self.check_highlighted = False
 
     def __repr__(self):
         return f'{self.get_name()}'  # -> {self.piece}'
@@ -44,9 +47,21 @@ class Square:
     # TODO: add highlighting for checks
     def draw(self, win):
         if self.highlighted:
+            if self.piece is not None:
+                pygame.draw.rect(win, self.highlight, (self.x, self.y, self.length, self.length))
+            else:
+                pygame.draw.circle(win, self.highlight, (self.x + self.length // 2, self.y + self.length // 2),
+                                   self.length // 6)
+        elif self.check_highlighted:
+            pygame.draw.rect(win, self.check_highlight, (self.x, self.y, self.length, self.length))
+        elif self.selected_highlighted:
             pygame.draw.rect(win, self.highlight, (self.x, self.y, self.length, self.length))
         else:
             pygame.draw.rect(win, self.color, (self.x, self.y, self.length, self.length))
+        # if self.highlighted:
+        #     pygame.draw.rect(win, self.highlight, (self.x, self.y, self.length, self.length))
+        # else:
+        #     pygame.draw.rect(win, self.color, (self.x, self.y, self.length, self.length))
         self.draw_piece(win)
 
     def draw_piece(self, win):

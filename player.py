@@ -57,8 +57,10 @@ class Player:
         if self.selected is not None:
             # print(self.selected)
             self.highlight_legal_moves(self.selected)
+            piece.square.selected_highlighted = True
 
     def unselect(self):
+        self.selected.square.selected_highlighted = False
         self.highlight_legal_moves(self.selected)
         self.selected = None
 
@@ -67,13 +69,21 @@ class Player:
 
         if self.selected is not None:
             if sq in self.legal_moves[self.selected]:
+                if self.king.square.check_highlighted:
+                    self.king.square.check_highlighted = False
+                self.selected.square.selected_highlighted = False
+
                 self.selected.move(sq)
                 Player.turn ^= 1
                 self.unselect()
                 self.clear_legal_moves()
+
                 check = self.opponent.king.in_check(self.opponent.king.square)
+                if check is not None:
+                    self.opponent.king.square.check_highlighted = True
                 if self.opponent.checkmate(check):
                     print('Game over')
+
             elif sq.piece is not None:
                 if sq.piece == self.selected:
                     self.unselect()
