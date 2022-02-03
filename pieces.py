@@ -1,4 +1,4 @@
-from restrictions import Check
+from restrictions import Check, Pin
 import pygame
 
 pygame.init()
@@ -26,11 +26,16 @@ class Piece:
 
     def pinned(self):
         """
-        This function will determine whether a piece is pinned and find the path of the pin
+        This method will determine whether a piece is pinned and find the path of the pin
         Path {}
         :return: The path on which the piece is restricted
         """
-        pass
+        king = self.board.kings[self.color]
+        dummy_king = Dummy_King(self.board, self.color, self.square)
+        check = dummy_king.in_check(self.square)
+        for piece in check.pieces:
+            if Pin.in_path(self.square, piece.square, king.square):
+                return Pin(king, self, piece)
 
     def move(self, square):
         self.square.piece = None
@@ -92,18 +97,18 @@ class Pawn(Piece):
                 extra_square = self.board.get_square(i - 2, j)
 
         if front_square is not None and front_square.piece is None:
-            if check is None or not check.is_restricted(front_square):
+            if check is None or not check.restricted(front_square):
                 moves.append(front_square)
         if left_diagonal is not None and left_diagonal.piece is not None:
             if left_diagonal.piece.color != self.color:
-                if check is None or not check.is_restricted(left_diagonal):
+                if check is None or not check.restricted(left_diagonal):
                     moves.append(left_diagonal)
         if right_diagonal is not None and right_diagonal.piece is not None:
             if right_diagonal.piece.color != self.color:
-                if check is None or not check.is_restricted(right_diagonal):
+                if check is None or not check.restricted(right_diagonal):
                     moves.append(right_diagonal)
         if extra_square is not None and extra_square.piece is None:
-            if check is None or not check.is_restricted(extra_square):
+            if check is None or not check.restricted(extra_square):
                 moves.append(extra_square)
 
         return moves
@@ -401,3 +406,18 @@ class King(Piece):
             self.add_if_legal(moves, move, check)
 
         return moves
+
+
+class Dummy_King(King):
+    def checked_by(self, square, piece):
+        def checked_by(self, square, piece):
+            # dummy = piece(self.board, self.color, square)
+            dummy = Dummy(self.board, self.color, square, piece, self)
+            moves = dummy.possible_moves(None)
+            pieces = []
+            for move in moves:
+                if isinstance(move.piece, piece) and move.piece.color != self.color:
+                    # print('found', move.piece)
+                    pieces.append(move.piece)
+
+            return None if len(pieces) == 0 else pieces

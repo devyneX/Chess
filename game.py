@@ -16,6 +16,8 @@ pygame.display.set_caption('Chess')
 game_board = Board()
 white_player = Player(game_board, 'White')
 black_player = Player(game_board, 'Black')
+white_player.set_opponent(black_player)
+black_player.set_opponent(white_player)
 
 
 def redraw():
