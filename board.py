@@ -120,7 +120,7 @@ class Board:
         :param y: y-coordinate
         :return: "Square" object
         """
-        if x > self.x + self.length or y > self.y + self.length:
+        if x < self.x or y < self.y or x >= self.x + self.length or y >= self.y + self.length:
             return None
         i = (x - self.x) // self.square_length
         j = (y - self.y) // self.square_length

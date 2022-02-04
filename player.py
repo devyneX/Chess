@@ -1,5 +1,5 @@
 import pygame
-from pieces import Queen, Rook, Pawn
+from pieces import Queen, Rook, Pawn, King, Knight, Bishop
 
 pygame.init()
 
@@ -21,23 +21,45 @@ class Player:
     def set_opponent(self, other):
         self.opponent = other
 
-    # TODO: implement draw by insufficient material
     def get_status(self, check):
         flag = True
+        insufficient = False
         self.get_legal_moves(check)
 
-        if len(self.legal_moves) <= 2 and len(self.opponent.legal_moves) <= 2:
-            insufficient = True
-            for piece in self.legal_moves:
-                if isinstance(piece, Queen) or isinstance(piece, Rook) or isinstance(piece, Pawn):
-                    insufficient = False
-
-            if insufficient:
+        if len(self.legal_moves) == 1:
+            if len(self.opponent.legal_moves) == 1:
+                insufficient = True
+            elif len(self.opponent.legal_moves) == 2:
+                insufficient = True
                 for piece in self.opponent.legal_moves:
                     if isinstance(piece, Queen) or isinstance(piece, Rook) or isinstance(piece, Pawn):
                         insufficient = False
-                if insufficient:
-                    return 'Draw by insufficient material'
+        elif len(self.legal_moves) == 2:
+            insufficient = True
+            remaining = None
+            for piece in self.legal_moves:
+                if isinstance(piece, Queen) or isinstance(piece, Rook) or isinstance(piece, Pawn):
+                    insufficient = False
+                elif not isinstance(piece, King):
+                    remaining = piece
+            if insufficient:
+                if len(self.opponent.legal_moves) == 2:
+                    if not isinstance(remaining, Bishop):
+                        insufficient = False
+                    else:
+                        opponent_remaining = None
+                        for piece in self.opponent.legal_moves:
+                            if isinstance(piece, Queen) or isinstance(piece, Rook) or isinstance(piece, Pawn):
+                                insufficient = False
+                            elif not isinstance(piece, King):
+                                opponent_remaining = piece
+                        if isinstance(opponent_remaining, Bishop):
+                            if remaining.square.color != opponent_remaining.square.color:
+                                insufficient = False
+                        else:
+                            insufficient = False
+                elif len(self.opponent.legal_moves) > 2:
+                    insufficient = False
 
         for piece in self.legal_moves:
             if len(self.legal_moves[piece]) != 0:
@@ -46,10 +68,14 @@ class Player:
         if check is not None:
             if flag:
                 return 'Checkmate'
+            elif insufficient:
+                return 'Draw by insufficient material'
             else:
                 return 'Continue'
         elif flag:
             return 'Stalemate'
+        elif insufficient:
+            return 'Draw by insufficient material'
         else:
             return 'Continue'
 

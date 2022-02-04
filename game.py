@@ -87,7 +87,6 @@ while run:
         if ended:
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_SPACE:
-                    # FIXME: Doesn't reset if there are bishops and knights on the board
                     reset()
 
         else:

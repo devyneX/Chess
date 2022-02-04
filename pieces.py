@@ -102,6 +102,9 @@ class Piece:
             square.piece.square = None
         square.piece = self
 
+    # FIXME: doesn't recognize pieces between king and pinned piece
+    # check in the path between self piece and king for any other pieces
+    # Improvement: find the path of from piece to king and only check for attacks in that path
     def pinned(self):
         """
         This method will determine whether a piece is pinned and find the path of the pin
@@ -193,7 +196,6 @@ class Pawn(Piece):
                 if check is None or not check.restricted(right_diagonal):
                     if pin is None or not pin.restricted(right_diagonal):
                         moves.append(right_diagonal)
-
 
         return moves
 
