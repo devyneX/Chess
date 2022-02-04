@@ -76,7 +76,7 @@ class Player:
     def play(self, x, y):
         sq = self.board.get_clicked_square(x, y)
         if sq is None:
-            return
+            return 'Continue'
 
         if self.selected is not None:
             if sq in self.legal_moves[self.selected]:
@@ -93,8 +93,7 @@ class Player:
                 if check is not None:
                     self.opponent.king.square.check_highlighted = True
                 status = self.opponent.get_status(check)
-                if status != 'Continue':
-                    print(status)
+                return status
 
             elif sq.piece is not None:
                 if sq.piece == self.selected:
@@ -106,3 +105,5 @@ class Player:
                 self.unselect()
         else:
             self.select(sq.piece)
+
+        return 'Continue'
