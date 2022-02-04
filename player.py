@@ -123,6 +123,8 @@ class Player:
                 elif sq.piece.color == self.color:
                     self.unselect()
                     self.select(sq.piece)
+                else:
+                    self.unselect()
             else:
                 self.unselect()
         else:

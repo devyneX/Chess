@@ -155,7 +155,6 @@ class Pawn(Piece):
         super().__init__(board, color, square)
         self.img = self.images['Pawn'][Piece.colors[color]]
 
-    # FIXME: if there's a same side piece in the path of 2 moves, it is not tracked and the 2 moves is added as legal
     def possible_moves(self, check, check_pin=True):
         pin = self.pinned() if check_pin else None
 
@@ -180,6 +179,10 @@ class Pawn(Piece):
             if check is None or not check.restricted(front_square):
                 if pin is None or not pin.restricted(front_square):
                     moves.append(front_square)
+                    if extra_square is not None and extra_square.piece is None:
+                        if check is None or not check.restricted(extra_square):
+                            if pin is None or not pin.restricted(extra_square):
+                                moves.append(extra_square)
         if left_diagonal is not None and left_diagonal.piece is not None:
             if left_diagonal.piece.color != self.color:
                 if check is None or not check.restricted(left_diagonal):
@@ -190,10 +193,7 @@ class Pawn(Piece):
                 if check is None or not check.restricted(right_diagonal):
                     if pin is None or not pin.restricted(right_diagonal):
                         moves.append(right_diagonal)
-        if extra_square is not None and extra_square.piece is None:
-            if check is None or not check.restricted(extra_square):
-                if pin is None or not pin.restricted(extra_square):
-                    moves.append(extra_square)
+
 
         return moves
 
