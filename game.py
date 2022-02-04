@@ -18,7 +18,7 @@ white_player = Player(game_board, 'White')
 black_player = Player(game_board, 'Black')
 white_player.set_opponent(black_player)
 black_player.set_opponent(white_player)
-ended = True
+ended = False
 
 
 def reset():
@@ -30,6 +30,7 @@ def reset():
     black_player.set_opponent(white_player)
     ended = False
     result = 'Continue'
+    Player.turn = 0
 
 
 def show_game_end(res):
@@ -39,8 +40,8 @@ def show_game_end(res):
     restart = 'Press Space to restart'
 
     end_screen_color = (255, 255, 255)
-    end_screen_width = 270
-    end_screen_height = 135
+    end_screen_width = 300
+    end_screen_height = 150
     end_screen_x = screen_width // 2 - end_screen_width // 2
     end_screen_y = screen_height // 2 - end_screen_height // 2
     pygame.draw.rect(screen, end_screen_color, (end_screen_x, end_screen_y, end_screen_width, end_screen_height))
@@ -65,6 +66,7 @@ def show_game_end(res):
 
 
 def redraw(res):
+    global ended
     game_board.draw(screen)
     if res != 'Continue':
         ended = True
@@ -82,16 +84,19 @@ while run:
             run = False
             break
 
-        if event.type == pygame.MOUSEBUTTONDOWN:
-            x, y = event.pos
-            if Player.turn == 0:
-                result = white_player.play(x, y)
-            else:
-                result = black_player.play(x, y)
-        if event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_SPACE:
-                if ended:
+        if ended:
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_SPACE:
+                    # FIXME: Doesn't reset if there are bishops and knights on the board
                     reset()
+
+        else:
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                x, y = event.pos
+                if Player.turn == 0:
+                    result = white_player.play(x, y)
+                else:
+                    result = black_player.play(x, y)
 
     redraw(result)
 

@@ -98,6 +98,8 @@ class Piece:
     def move(self, square):
         self.square.piece = None
         self.square = square
+        if square.piece is not None:
+            square.piece.square = None
         square.piece = self
 
     def pinned(self):
@@ -153,6 +155,7 @@ class Pawn(Piece):
         super().__init__(board, color, square)
         self.img = self.images['Pawn'][Piece.colors[color]]
 
+    # FIXME: if there's a same side piece in the path of 2 moves, it is not tracked and the 2 moves is added as legal
     def possible_moves(self, check, check_pin=True):
         pin = self.pinned() if check_pin else None
 

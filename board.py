@@ -10,6 +10,7 @@ class Square:
     highlight = (120, 223, 245)
     check_highlight = (255, 0, 0)
     home_piece = [Rook, Knight, Bishop, Queen, King, Bishop, Knight, Rook]
+    # home_piece = [None, Knight, Bishop, None, King, None, None, None]
 
     def __init__(self, board, row, column, color, x, y, length):
         self.board = board

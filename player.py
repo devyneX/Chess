@@ -1,4 +1,5 @@
 import pygame
+from pieces import Queen, Rook, Pawn
 
 pygame.init()
 
@@ -24,6 +25,20 @@ class Player:
     def get_status(self, check):
         flag = True
         self.get_legal_moves(check)
+
+        if len(self.legal_moves) <= 2 and len(self.opponent.legal_moves) <= 2:
+            insufficient = True
+            for piece in self.legal_moves:
+                if isinstance(piece, Queen) or isinstance(piece, Rook) or isinstance(piece, Pawn):
+                    insufficient = False
+
+            if insufficient:
+                for piece in self.opponent.legal_moves:
+                    if isinstance(piece, Queen) or isinstance(piece, Rook) or isinstance(piece, Pawn):
+                        insufficient = False
+                if insufficient:
+                    return 'Draw by insufficient material'
+
         for piece in self.legal_moves:
             if len(self.legal_moves[piece]) != 0:
                 flag = False
@@ -48,8 +63,15 @@ class Player:
         if check is not None and check.double_check():
             self.legal_moves[self.king] = self.king.possible_moves(check)
             return
+        captured = []
         for piece in self.legal_moves:
+            if piece.square is None:
+                captured.append(piece)
+                continue
             self.legal_moves[piece] = piece.possible_moves(check)
+
+        for piece in captured:
+            del self.legal_moves[piece]
 
     def clear_legal_moves(self):
         for piece in self.legal_moves:
