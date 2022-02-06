@@ -68,7 +68,7 @@ class Piece:
         self.img = None
 
     def __repr__(self):
-        return f'{self.color} {self.__class__} {self.square}'
+        return f'{self.__class__} {self.color}'
 
     def move(self, square):
         self.square.piece = None
@@ -92,6 +92,8 @@ class Piece:
                 elif isinstance(sq.piece, piece) or isinstance(sq.piece, Queen):
                     if sq.piece.color != self.color:
                         return Check(king, [sq.piece])
+                    else:
+                        return None
                 elif sq.piece is not None:
                     return None
 
@@ -178,10 +180,8 @@ class Piece:
         append = False
         if move.piece is None:
             append = True
-            # moves.append(move)
         elif move.piece.color != self.color:
             append = True
-            # moves.append(move)
             flag = False
         else:
             flag = False
@@ -198,11 +198,36 @@ class Piece:
         return flag
 
 
-# TODO: implement en passant
 class Pawn(Piece):
     def __init__(self, board, color, square):
         super().__init__(board, color, square)
+        self.en_passant = 0
         self.img = self.images['Pawn'][Piece.colors[color]]
+
+    def en_passant_available(self, left, right):
+        if left is not None:
+            if isinstance(left.piece, Pawn) and left.piece.color != self.color:
+                left.piece.en_passant = -1
+        if right is not None:
+            if isinstance(right.piece, Pawn) and right.piece.color != self.color:
+                right.piece.en_passant = 1
+
+    def play_en_passant(self, square, side):
+        print(side)
+        super().move(square)
+        side.piece.square = None
+        side.piece = None
+
+    def is_en_passant(self, square, col_inc, row_inc):
+        sq = self.board.get_square(self.square.row + row_inc, self.square.column + col_inc)
+        if square is sq:
+            side = self.board.get_square(self.square.row, self.square.column + col_inc)
+            if side is not None and side.piece is not None:
+                self.play_en_passant(square, side)
+                return True
+            else:
+                return False
+        return False
 
     def promote(self, piece):
         promoted = piece(self.board, self.color, self.square)
@@ -211,6 +236,26 @@ class Pawn(Piece):
         return promoted
 
     def move(self, square):
+        if self.color == 'White':
+            if square.row == 4:
+                if self.square.row == 2:
+                    left = self.board.get_square(square.row, self.square.column - 1)
+                    right = self.board.get_square(square.row, self.square.column + 1)
+                    self.en_passant_available(left, right)
+            elif self.en_passant:
+                if self.is_en_passant(square, self.en_passant, 1):
+                    return None
+
+        elif self.color == 'Black':
+            if square.row == 5:
+                if self.square.row == 7:
+                    left = self.board.get_square(square.row, self.square.column + 1)
+                    right = self.board.get_square(square.row, self.square.column - 1)
+                    self.en_passant_available(left, right)
+            elif self.en_passant:
+                if self.is_en_passant(square, -self.en_passant, -1):
+                    return None
+
         super().move(square)
         if self.color == 'White' and square.row == 8:
             return self
@@ -245,13 +290,23 @@ class Pawn(Piece):
                         if check is None or not check.restricted(extra_square):
                             if pin is None or not pin.restricted(extra_square):
                                 moves.append(extra_square)
-        if left_diagonal is not None and left_diagonal.piece is not None:
-            if left_diagonal.piece.color != self.color:
+        if left_diagonal is not None:
+            if left_diagonal.piece is not None:
+                if left_diagonal.piece.color != self.color:
+                    if check is None or not check.restricted(left_diagonal):
+                        if pin is None or not pin.restricted(left_diagonal):
+                            moves.append(left_diagonal)
+            elif self.en_passant == -1:
                 if check is None or not check.restricted(left_diagonal):
                     if pin is None or not pin.restricted(left_diagonal):
                         moves.append(left_diagonal)
-        if right_diagonal is not None and right_diagonal.piece is not None:
-            if right_diagonal.piece.color != self.color:
+        if right_diagonal is not None:
+            if right_diagonal.piece is not None:
+                if right_diagonal.piece.color != self.color:
+                    if check is None or not check.restricted(right_diagonal):
+                        if pin is None or not pin.restricted(right_diagonal):
+                            moves.append(right_diagonal)
+            elif self.en_passant == 1:
                 if check is None or not check.restricted(right_diagonal):
                     if pin is None or not pin.restricted(right_diagonal):
                         moves.append(right_diagonal)

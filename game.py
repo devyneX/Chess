@@ -38,7 +38,7 @@ def show_game_end(res):
     winner = f"{'White' if Player.turn == 1 else 'Black'} wins!!" if res == 'Checkmate' else None
     restart = 'Press Space to restart'
 
-    end_screen_color = (255, 255, 255)
+    end_screen_color = (142, 164, 210)
     end_screen_width = 300
     end_screen_height = 150
     end_screen_x = screen_width // 2 - end_screen_width // 2

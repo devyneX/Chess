@@ -20,9 +20,18 @@ class Player:
         self.get_legal_moves(None)
 
     def set_opponent(self, other):
+        """
+        sets the opponent of the player
+        :param other: A Player Object
+        """
         self.opponent = other
 
     def get_status(self, check):
+        """
+        Finds out whether the game should continue or end. If ended, finds the result.
+        :param check: Check Object
+        :return: A string containing current status of the game
+        """
         flag = True
         insufficient = False
         self.get_legal_moves(check)
@@ -81,12 +90,19 @@ class Player:
             return 'Continue'
 
     def set_legal_moves(self):
+        """
+        Sets player pieces at object creation
+        """
         limit = (1, 3) if self.color == 'White' else (7, 9)
         for i in range(limit[0], limit[1]):
             for j in range(1, 9):
                 self.legal_moves[self.board.get_square(i, j).piece] = []
 
     def get_legal_moves(self, check):
+        """
+        Calculates the legal move for all pieces currently on the board
+        :param check: A Check object
+        """
         if check is not None and check.double_check():
             self.legal_moves[self.king] = self.king.possible_moves(check)
             return
@@ -101,14 +117,27 @@ class Player:
             del self.legal_moves[piece]
 
     def clear_legal_moves(self):
+        """
+        Clears all the previous legal moves
+        """
         for piece in self.legal_moves:
             self.legal_moves[piece] = []
+            if isinstance(piece, Pawn):
+                piece.en_passant = 0
 
     def highlight_legal_moves(self, piece):
+        """
+        Highlights the legal move of a selected piece
+        :param piece: A Piece Object
+        """
         for move in self.legal_moves[piece]:
             move.highlighted = not move.highlighted
 
     def select(self, piece):
+        """
+        Selected the piece clicked
+        :param piece: A Piece Object
+        """
         self.selected = piece
         if self.selected is not None and self.selected.color != self.color:
             self.selected = None
@@ -118,11 +147,18 @@ class Player:
             piece.square.selected_highlighted = True
 
     def unselect(self):
+        """
+        Removes the current selected piece
+        """
         self.selected.square.selected_highlighted = False
         self.highlight_legal_moves(self.selected)
         self.selected = None
 
     def end_turn(self):
+        """
+        Ends the turn for the current player
+        :return: returns the current status of the game
+        """
         Player.turn ^= 1
         check = self.opponent.king.in_check(self.opponent.king.square)
         if check is not None:
@@ -131,6 +167,11 @@ class Player:
         return status
 
     def promotion(self, sq):
+        """
+        Handles pawn promotion
+        :param sq: A Square Object
+        :return: returns status of the game after promotion
+        """
         if sq.column == self.promoting_pawn.square.column:
             if self.color == 'White':
                 # promoted_piece = None
@@ -175,6 +216,12 @@ class Player:
             return 'Continue'
 
     def play(self, x, y):
+        """
+        Handling the players play
+        :param x: x-coordinate of click
+        :param y: y-coordinate of click
+        :return: the current status of the game
+        """
         sq = self.board.get_clicked_square(x, y)
         if sq is None:
             return 'Continue'

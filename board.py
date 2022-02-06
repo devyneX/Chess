@@ -26,7 +26,7 @@ class Square:
         self.check_highlighted = False
 
     def __repr__(self):
-        return f'{self.get_name()}'  # -> {self.piece}'
+        return f'{self.get_name()} -> {self.piece}'
 
     def __eq__(self, other):
         return self.row == other.row and self.column == other.column
@@ -78,6 +78,12 @@ class Board:
         self.promoting_pawn = None
 
     def get_square(self, row, column):
+        """
+        This method finds the square given a row and a column
+        :param row: Row of the square
+        :param column: Column of the square
+        :return: A Square Object
+        """
         if row <= 0 or column <= 0 or row > 8 or column > 8:
             return None
         return self.squares[8 - row][column - 1]
@@ -106,18 +112,22 @@ class Board:
         return squares
 
     def draw_promotion_screen(self, win):
+        """
+        This method draws the promotion options on the window
+        :param win: window on which the promotion pieces will be drawn
+        """
         length = self.square_length
         x = self.promoting_pawn.square.x
         y = self.promoting_pawn.square.y
         if self.promoting_pawn.color == 'White':
-            pygame.draw.rect(win, (0, 0, 0), (x, y, length, 4 * length))
+            pygame.draw.rect(win, (73, 81, 111), (x, y, length, 4 * length))
             win.blit(Piece.images['Queen'][1], (x, y))
             win.blit(Piece.images['Rook'][1], (x, y + length))
             win.blit(Piece.images['Bishop'][1], (x, y + 2 * length))
             win.blit(Piece.images['Knight'][1], (x, y + 3 * length))
 
         else:
-            pygame.draw.rect(win, (255, 255, 255), (x, y - 3 * length, length, 4 * length))
+            pygame.draw.rect(win, (98, 121, 184), (x, y - 3 * length, length, 4 * length))
             win.blit(Piece.images['Queen'][0], (x, y))
             win.blit(Piece.images['Rook'][0], (x, y - length))
             win.blit(Piece.images['Bishop'][0], (x, y - 2 * length))
