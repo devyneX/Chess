@@ -47,31 +47,6 @@ class Check:
         return not self.in_path(self.king.square, self.pieces[0].square, move)
 
 
-class Pin:
-    def __init__(self, king, pinned, pinning):
-        self.king = king
-        self.pinned = pinned
-        self.pinning = pinning
-        self.check = Check(king, [pinning])
-
-    @classmethod
-    def in_path(cls, pin_square, pinning_square, king_square):
-        if pin_square.row == pinning_square.row:
-            # horizontal
-            return king_square.row == pin_square.row
-        elif pin_square.column == pinning_square.column:
-            # vertical
-            return king_square.column == pin_square.column
-        else:
-            # diagonal
-            m = (pin_square.row - pinning_square.row) // (pin_square.column - pinning_square.column)
-            c = - m * pin_square.column + pin_square.row
-            return king_square.row == m * king_square.column + c
-
-    def restricted(self, move):
-        return self.check.restricted(move)
-
-
 class Piece:
     images = {
         'Pawn': [pygame.image.load(r'chess_pieces/black_pawn.png'), pygame.image.load(r'chess_pieces/white_pawn.png')],
@@ -102,13 +77,24 @@ class Piece:
             square.piece.square = None
         square.piece = self
 
-    # TODO: Organize pinned function. Delete Pin, DummyKing etc.
     def pinned(self):
         """
         This method will determine whether a piece is pinned and find the path of the pin
         Path {}
         :return: The path on which the piece is restricted
         """
+
+        def check_pin(generator, square_func, piece):
+            for x in generator:
+                sq = square_func(x)
+                if sq is None:
+                    return None
+                elif isinstance(sq.piece, piece) or isinstance(sq.piece, Queen):
+                    if sq.piece.color != self.color:
+                        return Check(king, [sq.piece])
+                elif sq.piece is not None:
+                    return None
+
         king = self.board.kings[self.color]
         if king.square.row == self.square.row:
             # horizontal
@@ -117,25 +103,18 @@ class Piece:
                     square = self.board.get_square(self.square.row, i)
                     if square.piece is not None:
                         return None
-                for i in range(self.square.column - 1, 0, -1):
-                    square = self.board.get_square(self.square.row, i)
-                    if isinstance(square.piece, Rook) or isinstance(square.piece, Queen):
-                        if square.piece.color != self.color:
-                            return Check(king, [square.piece])
-                    elif square.piece is not None:
-                        return None
+
+                return check_pin(range(self.square.column - 1, 0, -1),
+                                 lambda x: self.board.get_square(self.square.row, x), Rook)
+
             else:
                 for i in range(king.square.column + 1, self.square.column):
                     square = self.board.get_square(self.square.row, i)
                     if square.piece is not None:
                         return None
-                for i in range(self.square.column + 1, 9):
-                    square = self.board.get_square(self.square.row, i)
-                    if isinstance(square.piece, Rook) or isinstance(square.piece, Queen):
-                        if square.piece.color != self.color:
-                            return Check(king, [square.piece])
-                    elif square.piece is not None:
-                        return None
+
+                return check_pin(range(self.square.column + 1, 9),
+                                 lambda x: self.board.get_square(self.square.row, x), Rook)
 
         elif king.square.column == self.square.column:
             # vertical
@@ -144,25 +123,19 @@ class Piece:
                     square = self.board.get_square(i, self.square.column)
                     if square.piece is not None:
                         return None
-                for i in range(self.square.row - 1, 0, -1):
-                    square = self.board.get_square(i, self.square.column)
-                    if isinstance(square.piece, Rook) or isinstance(square.piece, Queen):
-                        if square.piece.color != self.color:
-                            return Check(king, [square.piece])
-                    elif square.piece is not None:
-                        return None
+
+                return check_pin(range(self.square.row - 1, 0, -1),
+                                 lambda x: self.board.get_square(x, self.square.column), Rook)
+
             else:
                 for i in range(king.square.row + 1, self.square.row):
                     square = self.board.get_square(i, self.square.column)
                     if square.piece is not None:
                         return None
-                for i in range(self.square.row + 1, 9):
-                    square = self.board.get_square(i, self.square.column)
-                    if isinstance(square.piece, Rook) or isinstance(square.piece, Queen):
-                        if square.piece.color != self.color:
-                            return Check(king, [square.piece])
-                    elif square.piece is not None:
-                        return None
+
+                return check_pin(range(self.square.row + 1, 9),
+                                 lambda x: self.board.get_square(x, self.square.column), Rook)
+
         else:
             m = (king.square.row - self.square.row) // (king.square.column - self.square.column)
             c = - m * king.square.column + king.square.row
@@ -171,62 +144,28 @@ class Piece:
                 if king.square.column > self.square.column:
                     for i in range(self.square.column + 1, king.square.column):
                         square = self.board.get_square(m * i + c, i)
-                        if square.piece is not None:
+                        if square is not None and square.piece is not None:
                             return None
-                    for i in range(self.square.column - 1, 0, -1):
-                        square = self.board.get_square(m * i + c, i)
-                        if square is None:
-                            return None
-                        if isinstance(square.piece, Bishop) or isinstance(square.piece, Queen):
-                            if square.piece.color != self.color:
-                                return Check(king, [square.piece])
-                        elif square.piece is not None:
-                            return None
+
+                    return check_pin(range(self.square.column - 1, 0, -1),
+                                     lambda x: self.board.get_square(m * x + c, x), Bishop)
+
                 else:
                     for i in range(king.square.column + 1, self.square.column):
                         square = self.board.get_square(m * i + c, i)
-                        if square.piece is not None:
+                        if square is not None and square.piece is not None:
                             return None
-                    for i in range(self.square.column + 1, 9):
-                        square = self.board.get_square(m * i + c, i)
-                        if square is None:
-                            return None
-                        if isinstance(square.piece, Bishop) or isinstance(square.piece, Queen):
-                            if square.piece.color != self.color:
-                                return Check(king, [square.piece])
-                        elif square.piece is not None:
-                            return None
+
+                    return check_pin(range(self.square.column + 1, 9),
+                                     lambda x: self.board.get_square(m * x + c, x), Bishop)
+
             else:
                 return None
 
-        # else:
-        #     # diagonal
-        #     m = (king_square.row - piece_square.row) // (king_square.column - piece_square.column)
-        #     c = - m * king_square.column + king_square.row
-        #     if move.row == m * move.column + c:
-        #         h_row, l_row = max(king_square.row, piece_square.row), min(king_square.row, piece_square.row)
-        #         h_col, l_col = max(king_square.column, piece_square.column), min(king_square.column,
-        #                                                                          piece_square.column)
-        #         return h_row >= move.row >= l_row and h_col >= move.column >= l_col
-        #     else:
-        #         return False
-        # king = self.board.kings[self.color]
-        # dummy_king = DummyKing(self.board, self.color, self.square)
-        # check = dummy_king.in_check(self.square)
-        # if check is None:
-        #     return None
-        #
-        # for piece in check.pieces:
-        #     if isinstance(piece, Knight):
-        #         continue
-        #     if Pin.in_path(self.square, piece.square, king.square):
-        #         return Pin(king, self, piece)
-
-    def possible_moves(self, check, check_pin=True):
+    def possible_moves(self, check):
         """
         This methods finds the legal moves for a piece
         :param check:
-        :param check_pin:
         :return: a list of legal moves
         """
         return []
@@ -234,19 +173,27 @@ class Piece:
     def add_if_legal(self, moves, move, check, pin):
         if move is None:
             return False
-        if check is not None and check.restricted(move):
-            return True
-        if pin is not None and pin.restricted(move):
-            return True
 
         flag = True
+        append = False
         if move.piece is None:
-            moves.append(move)
+            append = True
+            # moves.append(move)
         elif move.piece.color != self.color:
-            moves.append(move)
+            append = True
+            # moves.append(move)
             flag = False
         else:
             flag = False
+
+        if append:
+            if check is not None and check.restricted(move):
+                append = False
+            if pin is not None and pin.restricted(move):
+                append = False
+
+        if append:
+            moves.append(move)
 
         return flag
 
@@ -257,8 +204,8 @@ class Pawn(Piece):
         super().__init__(board, color, square)
         self.img = self.images['Pawn'][Piece.colors[color]]
 
-    def possible_moves(self, check, check_pin=True):
-        pin = self.pinned() if check_pin else None
+    def possible_moves(self, check):
+        pin = self.pinned()
 
         moves = []
         i, j = self.square.row, self.square.column
@@ -304,8 +251,8 @@ class Knight(Piece):
         super().__init__(board, color, square)
         self.img = self.images['Knight'][Piece.colors[color]]
 
-    def possible_moves(self, check, check_pin=True):
-        pin = self.pinned() if check_pin else None
+    def possible_moves(self, check):
+        pin = self.pinned()
 
         moves = []
 
@@ -326,8 +273,8 @@ class Bishop(Piece):
         super().__init__(board, color, square)
         self.img = self.images['Bishop'][Piece.colors[color]]
 
-    def possible_moves(self, check, check_pin=True):
-        pin = self.pinned() if check_pin else None
+    def possible_moves(self, check):
+        pin = self.pinned()
 
         moves = []
 
@@ -375,6 +322,9 @@ class Bishop(Piece):
             i -= 1
             j += 1
 
+        if self.color == 'Black':
+            print(self, moves)
+
         return moves
 
 
@@ -389,8 +339,8 @@ class Rook(Piece):
         if not self.moved:
             self.moved = True
 
-    def possible_moves(self, check, check_pin=True):
-        pin = self.pinned() if check_pin else None
+    def possible_moves(self, check):
+        pin = self.pinned()
 
         moves = []
 
@@ -442,7 +392,7 @@ class Queen(Piece):
         super().__init__(board, color, square)
         self.img = self.images['Queen'][Piece.colors[color]]
 
-    def possible_moves(self, check, check_pin=True):
+    def possible_moves(self, check):
         dummy_bishop = Bishop(self.board, self.color, self.square)
         dummy_rook = Rook(self.board, self.color, self.square)
 
@@ -469,12 +419,12 @@ class Dummy(Knight, Bishop, Rook, Queen):
         else:
             return False
 
-    def possible_moves(self, check, check_pin=False):
+    def possible_moves(self, check):
         if self.type == Queen:
             dummy_bishop = Dummy(self.board, self.color, self.square, Bishop, self.king)
             dummy_rook = Dummy(self.board, self.color, self.square, Rook, self.king)
-            return dummy_bishop.possible_moves(check, check_pin) + dummy_rook.possible_moves(check, check_pin)
-        return self.type.possible_moves(self, check, check_pin)
+            return dummy_bishop.possible_moves(check) + dummy_rook.possible_moves(check)
+        return self.type.possible_moves(self, check)
 
 
 class King(Piece):
@@ -607,7 +557,7 @@ class King(Piece):
                         if self.in_check(middle_square2) is None and self.in_check(middle_square3) is None:
                             moves.append(self.board.get_square(8, 3))
 
-    def possible_moves(self, check, check_pin=True):
+    def possible_moves(self, check):
         moves = []
 
         squares = self.adjacent_squares(self.square.row, self.square.column)
@@ -619,23 +569,3 @@ class King(Piece):
         self.castle_available(moves)
 
         return moves
-
-
-class DummyKing(King):
-    def checked_by(self, square, piece):
-        dummy = Dummy(self.board, self.color, square, piece, self)
-        moves = dummy.possible_moves(None)
-        pieces = []
-        for move in moves:
-            if isinstance(move.piece, piece) and move.piece.color != self.color:
-                pieces.append(move.piece)
-
-        return pieces
-
-    def in_check(self, square):
-        checking_pieces = []
-        for piece in [Bishop, Rook, Queen]:
-            checking_piece = self.checked_by(square, piece)
-            checking_pieces.extend(checking_piece)
-
-        return None if len(checking_pieces) == 0 else Check(self, checking_pieces)

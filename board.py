@@ -69,7 +69,7 @@ class Square:
 class Board:
     def __init__(self):
         self.length = 480
-        self.x = 10
+        self.x = 0
         self.y = 0
         self.square_length = self.length // 8
         self.squares = self.make_squares()
