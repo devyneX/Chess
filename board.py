@@ -1,4 +1,4 @@
-from pieces import Pawn, Rook, Knight, Bishop, Queen, King
+from pieces import Piece, Pawn, Rook, Knight, Bishop, Queen, King
 import pygame
 
 pygame.init()
@@ -75,6 +75,7 @@ class Board:
         self.squares = self.make_squares()
         self.kings = {'White': self.get_square(1, 5).piece,
                       'Black': self.get_square(8, 5).piece}
+        self.promoting_pawn = None
 
     def get_square(self, row, column):
         if row <= 0 or column <= 0 or row > 8 or column > 8:
@@ -104,6 +105,24 @@ class Board:
 
         return squares
 
+    def draw_promotion_screen(self, win):
+        length = self.square_length
+        x = self.promoting_pawn.square.x
+        y = self.promoting_pawn.square.y
+        if self.promoting_pawn.color == 'White':
+            pygame.draw.rect(win, (0, 0, 0), (x, y, length, 4 * length))
+            win.blit(Piece.images['Queen'][1], (x, y))
+            win.blit(Piece.images['Rook'][1], (x, y + length))
+            win.blit(Piece.images['Bishop'][1], (x, y + 2 * length))
+            win.blit(Piece.images['Knight'][1], (x, y + 3 * length))
+
+        else:
+            pygame.draw.rect(win, (255, 255, 255), (x, y - 3 * length, length, 4 * length))
+            win.blit(Piece.images['Queen'][0], (x, y))
+            win.blit(Piece.images['Rook'][0], (x, y - length))
+            win.blit(Piece.images['Bishop'][0], (x, y - 2 * length))
+            win.blit(Piece.images['Knight'][0], (x, y - 3 * length))
+
     def draw(self, win):
         """
         This method draws the board on the window
@@ -112,6 +131,9 @@ class Board:
         for row in self.squares:
             for square in row:
                 square.draw(win)
+
+        if self.promoting_pawn is not None:
+            self.draw_promotion_screen(win)
 
     def get_clicked_square(self, x, y):
         """

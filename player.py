@@ -1,5 +1,5 @@
 import pygame
-from pieces import Queen, Rook, Pawn, King, Knight, Bishop
+from pieces import Queen, Rook, Pawn, King, Bishop, Knight
 
 pygame.init()
 
@@ -14,6 +14,7 @@ class Player:
         self.king = self.board.kings[self.color]
         self.opponent = None
         self.legal_moves = {}
+        self.promoting_pawn = None
 
         self.set_legal_moves()
         self.get_legal_moves(None)
@@ -121,27 +122,82 @@ class Player:
         self.highlight_legal_moves(self.selected)
         self.selected = None
 
+    def end_turn(self):
+        Player.turn ^= 1
+        check = self.opponent.king.in_check(self.opponent.king.square)
+        if check is not None:
+            self.opponent.king.square.check_highlighted = True
+        status = self.opponent.get_status(check)
+        return status
+
+    def promotion(self, sq):
+        if sq.column == self.promoting_pawn.square.column:
+            if self.color == 'White':
+                # promoted_piece = None
+                if sq.row == 8:
+                    promoted_piece = self.promoting_pawn.promote(Queen)
+                elif sq.row == 7:
+                    promoted_piece = self.promoting_pawn.promote(Rook)
+                elif sq.row == 6:
+                    promoted_piece = self.promoting_pawn.promote(Bishop)
+                elif sq.row == 5:
+                    promoted_piece = self.promoting_pawn.promote(Knight)
+                else:
+                    return 'Continue'
+
+                if promoted_piece is not None:
+                    del self.legal_moves[self.promoting_pawn]
+                    self.legal_moves[promoted_piece] = []
+                    self.promoting_pawn = None
+                    self.board.promoting_pawn = None
+                    return self.end_turn()
+
+            else:
+                # promoted_piece = None
+                if sq.row == 1:
+                    promoted_piece = self.promoting_pawn.promote(Queen)
+                elif sq.row == 2:
+                    promoted_piece = self.promoting_pawn.promote(Rook)
+                elif sq.row == 3:
+                    promoted_piece = self.promoting_pawn.promote(Bishop)
+                elif sq.row == 4:
+                    promoted_piece = self.promoting_pawn.promote(Knight)
+                else:
+                    return 'Continue'
+
+                if promoted_piece is not None:
+                    del self.legal_moves[self.promoting_pawn]
+                    self.legal_moves[promoted_piece] = []
+                    self.promoting_pawn = None
+                    self.board.promoting_pawn = None
+                    return self.end_turn()
+        else:
+            return 'Continue'
+
     def play(self, x, y):
         sq = self.board.get_clicked_square(x, y)
         if sq is None:
             return 'Continue'
 
-        if self.selected is not None:
+        if self.promoting_pawn is not None:
+            return self.promotion(sq)
+
+        elif self.selected is not None:
             if sq in self.legal_moves[self.selected]:
                 if self.king.square.check_highlighted:
                     self.king.square.check_highlighted = False
                 self.selected.square.selected_highlighted = False
 
-                self.selected.move(sq)
-                Player.turn ^= 1
+                self.promoting_pawn = self.selected.move(sq)
+
                 self.unselect()
                 self.clear_legal_moves()
 
-                check = self.opponent.king.in_check(self.opponent.king.square)
-                if check is not None:
-                    self.opponent.king.square.check_highlighted = True
-                status = self.opponent.get_status(check)
-                return status
+                if self.promoting_pawn is None:
+                    return self.end_turn()
+                else:
+                    self.board.promoting_pawn = self.promoting_pawn
+                    return 'Continue'
 
             elif sq.piece is not None:
                 if sq.piece == self.selected:

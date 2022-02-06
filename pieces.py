@@ -198,11 +198,24 @@ class Piece:
         return flag
 
 
-# TODO: implement en passant and promotion
+# TODO: implement en passant
 class Pawn(Piece):
     def __init__(self, board, color, square):
         super().__init__(board, color, square)
         self.img = self.images['Pawn'][Piece.colors[color]]
+
+    def promote(self, piece):
+        promoted = piece(self.board, self.color, self.square)
+        self.square.piece = promoted
+        self.square = None
+        return promoted
+
+    def move(self, square):
+        super().move(square)
+        if self.color == 'White' and square.row == 8:
+            return self
+        elif self.color == 'Black' and square.row == 1:
+            return self
 
     def possible_moves(self, check):
         pin = self.pinned()
@@ -321,9 +334,6 @@ class Bishop(Piece):
 
             i -= 1
             j += 1
-
-        if self.color == 'Black':
-            print(self, moves)
 
         return moves
 

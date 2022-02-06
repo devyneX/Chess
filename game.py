@@ -9,7 +9,6 @@ screen_width = 480  # 660
 screen_height = 480  # 640
 size = (screen_width, screen_height)
 
-# TODO: add clocks and background and probably sound effects (improvement)
 screen = pygame.display.set_mode(size)
 pygame.display.set_caption('Chess')
 # pygame.display.set_icon('icon.png')
