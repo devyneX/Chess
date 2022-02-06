@@ -11,7 +11,8 @@ A simple chess game
 
 ## Instructions
 - Make sure you have python 3.9 or higher installed on your machine 
-- Use ```pip install requirements.txt``` to intall the requirements
-- Use ```python path/Chess/game.py``` to run the game. Replace path with the path where Chess folder is saved.
+- Browse to the Chess directory on your terminal/commandline.
+- Use ```pip install -r requirements.txt``` to install the requirements
+- Use ```python game.py``` to run the game.
 
 Let me know if you find any bugs or have any suggestions for improvement.
